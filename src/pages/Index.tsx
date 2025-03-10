@@ -17,10 +17,10 @@ const Index = () => {
         <Header />
         <main className="flex-1 container mx-auto px-4 py-6">
           <Tabs defaultValue="regular" onValueChange={setActiveView} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="regular">Task List</TabsTrigger>
-              <TabsTrigger value="uncompleted">Uncompleted Tasks</TabsTrigger>
-              <TabsTrigger value="completed">Completed Tasks</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-6 max-w-md mx-auto">
+              <TabsTrigger value="regular" className="text-xs sm:text-sm whitespace-normal h-auto py-2">Task List</TabsTrigger>
+              <TabsTrigger value="uncompleted" className="text-xs sm:text-sm whitespace-normal h-auto py-2">Uncompleted</TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs sm:text-sm whitespace-normal h-auto py-2">Completed</TabsTrigger>
             </TabsList>
             
             <TabsContent value="regular" className="mt-0">
