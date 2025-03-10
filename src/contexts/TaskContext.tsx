@@ -186,7 +186,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       toast({
         title: newStatus ? "Task completed" : "Task reopened",
         description: `"${task.title}" is ${newStatus ? 'now marked as done' : 'back on your list'}.`,
-        variant: newStatus ? "default" : "secondary",
+        variant: newStatus ? "default" : "default", // Changed from "secondary" to "default"
       });
     }
   };

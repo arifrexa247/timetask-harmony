@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
 import TaskItem from './TaskItem';
@@ -7,7 +6,7 @@ import TaskForm from './TaskForm';
 import { Button } from '@/components/ui/button';
 import { Plus, ListFilter } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 const TaskList = () => {
   const { 
@@ -22,13 +21,16 @@ const TaskList = () => {
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   
+  
   const handleAddTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
     addTask(taskData);
+    setAddTaskOpen(false);
   };
   
   const handleEditTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
     if (currentTask) {
       updateTask(currentTask.id, taskData);
+      setEditTaskOpen(false);
     }
   };
   
@@ -49,7 +51,7 @@ const TaskList = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Your Tasks</h2>
         <Button onClick={() => setAddTaskOpen(true)}>
@@ -110,7 +112,7 @@ const TaskList = () => {
         initialData={currentTask}
         mode="edit"
       />
-    </div>
+    </>
   );
 };
 
