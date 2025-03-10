@@ -6,6 +6,7 @@ import UncompletedTasksTable from '@/components/UncompletedTasksTable';
 import { TaskProvider } from '@/contexts/TaskContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
+import { Toaster } from '@/components/ui/toaster';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<string>('regular');
@@ -35,6 +36,7 @@ const Index = () => {
             </TabsContent>
           </Tabs>
         </main>
+        <Toaster />
       </div>
     </TaskProvider>
   );

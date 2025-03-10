@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Task, UserPreferences } from '@/types/task';
 import { useToast } from '@/hooks/use-toast';
@@ -75,13 +74,45 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   // Save tasks to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
-    checkAlarms();
   }, [tasks]);
 
   // Save preferences to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('preferences', JSON.stringify(preferences));
   }, [preferences]);
+
+  // Request notification permission on startup if enabled
+  useEffect(() => {
+    if (preferences.enableNotifications) {
+      requestNotificationPermission();
+    }
+  }, [preferences.enableNotifications]);
+
+  // Function to request notification permission
+  const requestNotificationPermission = async () => {
+    if (!("Notification" in window)) {
+      toast({
+        title: "Notifications not supported",
+        description: "Your browser doesn't support notifications",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          toast({
+            title: "Notifications enabled",
+            description: "You'll receive alerts for your tasks",
+          });
+        }
+      } catch (error) {
+        console.error("Error requesting notification permission:", error);
+      }
+    }
+  };
 
   // Check for alarms that need to be triggered
   const checkAlarms = () => {
@@ -97,42 +128,59 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
+        // Check if the task is due today
         if (taskDate.getTime() === today.getTime()) {
           const [hours, minutes] = task.dueTime.split(':').map(Number);
           const taskTime = hours * 60 + minutes;
           
           // If the current time is within 1 minute of the task time
           if (Math.abs(currentTime - taskTime) <= 1) {
-            // Trigger notification
-            if (Notification.permission === 'granted') {
-              new Notification('Task Reminder', {
-                body: `It's time for: ${task.title}`,
-                icon: '/favicon.ico'
-              });
-            }
-            
-            // Also show a toast notification
-            toast({
-              title: "⏰ Task Reminder",
-              description: `It's time for: ${task.title}`,
-              duration: 5000,
-            });
+            triggerAlarm(task);
           }
         }
       }
     });
   };
 
-  // Request notification permission
-  useEffect(() => {
-    if (preferences.enableNotifications && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-      Notification.requestPermission();
+  // Separate function to trigger alarms
+  const triggerAlarm = (task: Task) => {
+    // Show browser notification
+    if (Notification.permission === 'granted') {
+      const notification = new Notification('Task Reminder', {
+        body: `It's time for: ${task.title}`,
+        icon: '/favicon.ico'
+      });
+      
+      // Play sound when notification shows
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/933/933-preview.mp3');
+      audio.play().catch(e => console.error("Error playing sound:", e));
+      
+      // Add click event to focus window when notification is clicked
+      notification.onclick = function() {
+        window.focus();
+        notification.close();
+      };
     }
     
-    // Set up a timer to check alarms every minute
+    // Also show a toast notification
+    toast({
+      title: "⏰ Task Reminder",
+      description: `It's time for: ${task.title}`,
+      duration: 10000,
+    });
+  };
+
+  // Set up a timer to check alarms every minute
+  useEffect(() => {
+    // Run once immediately on component mount
+    checkAlarms();
+    
+    // Then set interval to run every minute
     const alarmInterval = setInterval(checkAlarms, 60000);
+    
+    // Clean up on unmount
     return () => clearInterval(alarmInterval);
-  }, [preferences.enableNotifications]);
+  }, [tasks, preferences.enableNotifications]);  // Re-run when tasks or notification preferences change
 
   // Context methods
   const addTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {

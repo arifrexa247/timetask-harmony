@@ -94,7 +94,17 @@ const TaskForm = ({
       data.alarmSet = false;
     }
     
-    onSubmit(data);
+    // Ensure title is not undefined or empty to satisfy the Task type
+    const taskData: Omit<Task, 'id' | 'createdAt'> = {
+      title: data.title, // This is required by the schema so it's never undefined
+      description: data.description,
+      completed: data.completed,
+      dueDate: data.dueDate,
+      dueTime: data.dueTime,
+      alarmSet: data.alarmSet,
+    };
+    
+    onSubmit(taskData);
     onOpenChange(false);
   };
 
