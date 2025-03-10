@@ -1,13 +1,24 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Settings, AlarmClock, Moon, Sun } from 'lucide-react';
+import { Settings, AlarmClock, Moon, Sun, Calendar } from 'lucide-react';
 import PreferencesDialog from './PreferencesDialog';
 import { useTaskContext } from '@/contexts/TaskContext';
+import { format } from 'date-fns';
 
 const Header = () => {
   const { preferences, updatePreferences } = useTaskContext();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  
+  // Update the current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
   
   // Apply dark mode class based on preferences
   useEffect(() => {
@@ -28,6 +39,15 @@ const Header = () => {
         <div className="flex items-center gap-2">
           <AlarmClock className="h-6 w-6 text-todo-primary" />
           <h1 className="text-xl font-bold">TimeTask Harmony</h1>
+        </div>
+        
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-4 w-4" />
+            <span className="text-sm font-medium">
+              {format(currentDateTime, 'MMM dd, yyyy hh:mm:ss a')}
+            </span>
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
