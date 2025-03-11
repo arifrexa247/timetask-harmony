@@ -1,3 +1,4 @@
+
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Counter } from '@/types/task';
 import { useToast } from '@/hooks/use-toast';
@@ -119,7 +120,7 @@ export const CounterProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Function to get historical data for charts
-  const getCounterHistory = (id: string, period: 'weekly' | 'monthly' | 'yearly') => {
+  const getCounterHistory = (id: string, period: 'weekly' | 'monthly' | 'yearly'): { date: string; count: number }[] => {
     const counter = counters.find(c => c.id === id);
     if (!counter || !counter.history) return [];
 

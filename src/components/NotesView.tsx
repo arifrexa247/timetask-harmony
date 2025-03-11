@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useNoteContext } from '@/contexts/NoteContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash, Edit, Save, File, FilePlus, Notebook } from 'lucide-react';
+import { Plus, Trash, Edit, Save, File, FilePlus, Notebook, PenLine } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,6 +32,8 @@ const NotesView = () => {
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [editingSections, setEditingSections] = useState<Record<string, boolean>>({});
   const [editingSectionContent, setEditingSectionContent] = useState<Record<string, string>>({});
+  const [editingSectionTitle, setEditingSectionTitle] = useState<Record<string, string>>({});
+  const [isEditingSectionTitle, setIsEditingSectionTitle] = useState<Record<string, boolean>>({});
   
   // This ensures we always have the correct active note
   useEffect(() => {
@@ -83,6 +84,30 @@ const NotesView = () => {
     addNoteSection(activeNote.id, newSectionTitle.trim());
     setNewSectionTitle('');
     setIsAddSectionDialogOpen(false);
+  };
+  
+  const startEditingSectionTitle = (section: NoteSection) => {
+    setIsEditingSectionTitle({
+      ...isEditingSectionTitle,
+      [section.id]: true,
+    });
+    setEditingSectionTitle({
+      ...editingSectionTitle,
+      [section.id]: section.title,
+    });
+  };
+
+  const saveEditingSectionTitle = (noteId: string, sectionId: string) => {
+    if (!editingSectionTitle[sectionId]) return;
+    
+    updateNoteSection(noteId, sectionId, {
+      title: editingSectionTitle[sectionId],
+    });
+    
+    setIsEditingSectionTitle({
+      ...isEditingSectionTitle,
+      [sectionId]: false,
+    });
   };
   
   const startEditingSection = (section: NoteSection) => {
@@ -246,8 +271,38 @@ const NotesView = () => {
                     {activeNote.sections.map((section) => (
                       <TabsContent key={section.id} value={section.id} className="mt-0">
                         <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-medium">{section.title}</h3>
+                          {isEditingSectionTitle[section.id] ? (
+                            <Input
+                              value={editingSectionTitle[section.id] || section.title}
+                              onChange={(e) => setEditingSectionTitle({
+                                ...editingSectionTitle,
+                                [section.id]: e.target.value,
+                              })}
+                              className="mr-2 w-1/3"
+                            />
+                          ) : (
+                            <div className="flex items-center">
+                              <h3 className="text-lg font-medium">{section.title}</h3>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="ml-2 h-8 w-8 p-0"
+                                onClick={() => startEditingSectionTitle(section)}
+                              >
+                                <PenLine className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                           <div className="flex gap-2">
+                            {isEditingSectionTitle[section.id] && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => saveEditingSectionTitle(activeNote.id, section.id)}
+                              >
+                                <Save className="h-4 w-4 mr-1" /> Save Title
+                              </Button>
+                            )}
                             {editingSections[section.id] ? (
                               <Button 
                                 variant="outline" 

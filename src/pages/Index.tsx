@@ -34,7 +34,7 @@ const Index = () => {
             <Header />
             <main className="flex-1 container mx-auto px-4 py-6">
               <div className="mb-8">
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-w-3xl mx-auto">
+                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-6 gap-2 max-w-4xl mx-auto">
                   {navItems.map((item) => {
                     const Icon = item.icon;
                     return (
