@@ -24,7 +24,7 @@ const CounterView = () => {
   const [activeCounter, setActiveCounter] = useState<string | null>(
     counters.length > 0 ? counters[0].id : null
   );
-  const [activeTab, setActiveTab] = useState<'counter' | 'chart'>('counter');
+  const [activeTab, setActiveTab] = useState<string>('counter');
   const [isChartDialogOpen, setIsChartDialogOpen] = useState(false);
   const [chartCounterId, setChartCounterId] = useState<string | null>(null);
 
@@ -117,38 +117,50 @@ const CounterView = () => {
                     <p className="text-sm text-muted-foreground">Count: {counter.count}</p>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
                       onClick={(e) => {
                         e.stopPropagation();
-                        openChartDialog(counter.id);
+                        handleIncrement(counter.id);
                       }}
                     >
-                      <BarChart className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </Button>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
-                          <span className="sr-only">Open menu</span>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingCounter({ id: counter.id, name: counter.name });
-                        }}>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCounter({ id: counter.id, name: counter.name });
+                          }}
+                        >
                           <Edit className="mr-2 h-4 w-4" />
                           <span>Edit Name</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation();
-                          handleReset(counter.id);
-                        }}>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReset(counter.id);
+                          }}
+                        >
                           <RotateCcw className="mr-2 h-4 w-4" />
                           <span>Reset Counter</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openChartDialog(counter.id);
+                          }}
+                        >
+                          <BarChart className="mr-2 h-4 w-4" />
+                          <span>View Chart</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={(e) => {
@@ -174,53 +186,56 @@ const CounterView = () => {
             ))}
           </div>
 
-          {currentCounter && (
-            <div className="md:col-span-2">
-              <Card className="h-full flex flex-col">
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>{currentCounter.name}</CardTitle>
-                    <Tabs 
-                      value={activeTab} 
-                      onValueChange={(value) => setActiveTab(value as 'counter' | 'chart')}
-                    >
-                      <TabsList>
-                        <TabsTrigger value="counter">Counter</TabsTrigger>
-                        <TabsTrigger value="chart">Chart</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow flex items-center justify-center p-0">
-                  <TabsContent value="counter" className="flex-grow flex items-center justify-center m-0 p-4 w-full">
-                    <div 
-                      className="relative rounded-full border-8 border-primary flex items-center justify-center cursor-pointer transition-transform active:scale-95"
-                      style={{ width: '200px', height: '200px' }}
-                      onClick={() => handleIncrement(currentCounter.id)}
-                    >
-                      <span className="text-5xl font-bold">{currentCounter.count}</span>
-                      <span className="absolute top-full mt-4 text-center w-full text-sm text-muted-foreground">
-                        Tap to count
-                      </span>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="chart" className="flex-grow m-0 w-full h-full">
-                    <CounterChart counterId={currentCounter.id} />
-                  </TabsContent>
-                </CardContent>
-                <CardFooter className="flex justify-center gap-4 pb-6">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleReset(currentCounter.id)}
-                    className="flex items-center gap-2"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    Reset
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-          )}
+          <div className="md:col-span-2">
+            {currentCounter && (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="counter">Counter</TabsTrigger>
+                  <TabsTrigger value="chart">Chart</TabsTrigger>
+                </TabsList>
+                <TabsContent value="counter">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex justify-between items-center">
+                        <span>{currentCounter.name}</span>
+                        <span className="text-3xl font-bold">{currentCounter.count}</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col space-y-4">
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={() => handleIncrement(currentCounter.id)}
+                            className="flex-1"
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Increment
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => handleReset(currentCounter.id)}
+                            className="flex-1"
+                          >
+                            <RotateCcw className="mr-2 h-4 w-4" /> Reset
+                          </Button>
+                        </div>
+                        <Progress value={(currentCounter.count / maxCount) * 100} className="h-2" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="chart">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Progress Chart</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {currentCounter && <CounterChart counter={currentCounter} />}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            )}
+          </div>
 
           <div className="md:col-span-3">
             <Card>
@@ -252,14 +267,32 @@ const CounterView = () => {
                             />
                           </td>
                           <td className="py-3 px-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openChartDialog(counter.id)}
-                            >
-                              <BarChart className="h-4 w-4 mr-1" />
-                              View Report
-                            </Button>
+                            <div className="flex space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleIncrement(counter.id)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleReset(counter.id)}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => handleDelete(counter.id)}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -274,86 +307,68 @@ const CounterView = () => {
 
       {/* Add Counter Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Counter</DialogTitle>
             <DialogDescription>
-              Create a new counter to track repetitive actions.
+              Create a new counter to track anything you want to count.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">Counter Name</label>
-                <Input
-                  id="name"
-                  placeholder="Enter counter name"
-                  value={newCounterName}
-                  onChange={(e) => setNewCounterName(e.target.value)}
-                />
-              </div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Input
+                placeholder="Counter name"
+                value={newCounterName}
+                onChange={(e) => setNewCounterName(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddCounter}>
-              Add Counter
-            </Button>
+            <Button onClick={handleAddCounter}>Add Counter</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Counter Dialog */}
       <Dialog open={!!editingCounter} onOpenChange={(open) => !open && setEditingCounter(null)}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Counter</DialogTitle>
-            <DialogDescription>
-              Modify your counter details.
-            </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">Counter Name</label>
-                <Input
-                  id="name"
-                  placeholder="Enter counter name"
-                  value={editingCounter?.name || ''}
-                  onChange={(e) => setEditingCounter(prev => prev ? {...prev, name: e.target.value} : null)}
-                />
-              </div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Input
+                placeholder="Counter name"
+                value={editingCounter?.name || ''}
+                onChange={(e) => setEditingCounter(prev => prev ? { ...prev, name: e.target.value } : null)}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingCounter(null)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateCounter}>
-              Save Changes
-            </Button>
+            <Button onClick={handleUpdateCounter}>Update</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Chart Dialog */}
       <Dialog open={isChartDialogOpen} onOpenChange={setIsChartDialogOpen}>
-        <DialogContent className="sm:max-w-[80vw] h-[80vh] max-h-[600px]">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Counter Statistics</DialogTitle>
-            <DialogDescription>
-              View detailed statistics for your counter.
-            </DialogDescription>
+            <DialogTitle>
+              {counters.find(c => c.id === chartCounterId)?.name} - Chart
+            </DialogTitle>
           </DialogHeader>
-          <div className="py-4 h-full">
-            {chartCounterId && <CounterChart counterId={chartCounterId} />}
+          <div className="py-4">
+            {chartCounterId && <CounterChart counter={counters.find(c => c.id === chartCounterId)!} />}
           </div>
           <DialogFooter>
-            <Button onClick={() => setIsChartDialogOpen(false)}>
-              Close
-            </Button>
+            <Button onClick={() => setIsChartDialogOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

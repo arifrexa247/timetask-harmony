@@ -103,3 +103,54 @@ const CounterChart = ({ counterId }: CounterChartProps) => {
 };
 
 export default CounterChart;
+import { Counter } from '@/types/task';
+
+interface CounterChartProps {
+  counter: Counter;
+}
+
+const CounterChart = ({ counter }: CounterChartProps) => {
+  // Simple chart component
+  const maxBars = 10;
+  const barHeight = 20;
+  const maxValue = Math.max(counter.count, 10);
+  
+  return (
+    <div className="w-full">
+      <div className="mb-4">
+        <h3 className="text-lg font-medium">{counter.name}</h3>
+        <p className="text-sm text-muted-foreground">Current count: {counter.count}</p>
+      </div>
+      
+      <div className="relative h-[200px] w-full">
+        <div className="absolute left-0 bottom-0 w-full h-full flex items-end">
+          <div 
+            className="bg-primary/80 rounded-t-md transition-all duration-500 ease-in-out"
+            style={{ 
+              width: '100%', 
+              height: `${Math.min(100, (counter.count / maxValue) * 100)}%`
+            }}
+          />
+        </div>
+        
+        {/* Y-axis markers */}
+        <div className="absolute left-0 top-0 h-full flex flex-col justify-between">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="flex items-center">
+              <span className="text-xs text-muted-foreground pr-2">
+                {Math.round(maxValue - (maxValue / 4) * index)}
+              </span>
+              <div className="w-2 border-t border-border" />
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="mt-6 text-center text-sm text-muted-foreground">
+        Created on {new Date(counter.createdAt).toLocaleDateString()}
+      </div>
+    </div>
+  );
+};
+
+export default CounterChart;
