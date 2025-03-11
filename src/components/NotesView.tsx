@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNoteContext } from '@/contexts/NoteContext';
 import { Button } from '@/components/ui/button';
@@ -272,14 +273,23 @@ const NotesView = () => {
                       <TabsContent key={section.id} value={section.id} className="mt-0">
                         <div className="flex justify-between items-center mb-4">
                           {isEditingSectionTitle[section.id] ? (
-                            <Input
-                              value={editingSectionTitle[section.id] || section.title}
-                              onChange={(e) => setEditingSectionTitle({
-                                ...editingSectionTitle,
-                                [section.id]: e.target.value,
-                              })}
-                              className="mr-2 w-1/3"
-                            />
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={editingSectionTitle[section.id] || section.title}
+                                onChange={(e) => setEditingSectionTitle({
+                                  ...editingSectionTitle,
+                                  [section.id]: e.target.value,
+                                })}
+                                className="w-64"
+                              />
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => saveEditingSectionTitle(activeNote.id, section.id)}
+                              >
+                                <Save className="h-4 w-4 mr-1" /> Save Title
+                              </Button>
+                            </div>
                           ) : (
                             <div className="flex items-center">
                               <h3 className="text-lg font-medium">{section.title}</h3>
@@ -294,15 +304,6 @@ const NotesView = () => {
                             </div>
                           )}
                           <div className="flex gap-2">
-                            {isEditingSectionTitle[section.id] && (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => saveEditingSectionTitle(activeNote.id, section.id)}
-                              >
-                                <Save className="h-4 w-4 mr-1" /> Save Title
-                              </Button>
-                            )}
                             {editingSections[section.id] ? (
                               <Button 
                                 variant="outline" 

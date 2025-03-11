@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Counter } from '@/types/task';
 import { useToast } from '@/hooks/use-toast';
@@ -160,14 +159,17 @@ export const CounterProvider = ({ children }: { children: ReactNode }) => {
         acc[formattedDate] = 0;
       }
       
-      acc[formattedDate] += entry.count;
+      // Ensure entry.count is treated as a number
+      const countValue = typeof entry.count === 'number' ? entry.count : 1;
+      acc[formattedDate] += countValue;
+      
       return acc;
     }, {});
 
     // Convert to array for recharts
     return Object.entries(groupedByDate).map(([date, count]) => ({
       date,
-      count
+      count: count as number
     }));
   };
 

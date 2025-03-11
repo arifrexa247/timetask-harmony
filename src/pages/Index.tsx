@@ -33,14 +33,14 @@ const Index = () => {
           <div className="min-h-screen bg-background text-foreground flex flex-col">
             <Header />
             <main className="flex-1 container mx-auto px-4 py-6">
-              <div className="mb-8">
-                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-6 gap-2 max-w-4xl mx-auto">
+              <div className="mb-8 overflow-hidden">
+                <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
                   {navItems.map((item) => {
                     const Icon = item.icon;
                     return (
                       <Card 
                         key={item.id}
-                        className={`cursor-pointer transition-all hover:bg-accent ${
+                        className={`cursor-pointer transition-all hover:bg-accent flex-grow sm:flex-grow-0 sm:w-auto min-w-[80px] sm:min-w-[100px] ${
                           activeView === item.id 
                             ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary' 
                             : 'bg-card hover:shadow-sm'
