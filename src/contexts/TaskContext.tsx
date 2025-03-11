@@ -108,7 +108,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             const completionHistory = task.completionHistory || [];
             completionHistory.push({
               date: now.toISOString(),
-              completed: true
+              completed: true, // Added comma here
             });
 
             updatedTasks[index] = {
