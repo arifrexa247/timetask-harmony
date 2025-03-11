@@ -1,14 +1,15 @@
 
 import React, { useMemo } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
-import { format, subDays, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { Task } from '@/types/task';
+import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
+import { CheckCircle, XCircle, Circle } from 'lucide-react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -16,11 +17,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Task } from '@/types/task';
-import { CheckCircle, XCircle, Circle } from 'lucide-react';
+} from '@/components/ui/table';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 
-const RecurringTasksCompletionReport = () => {
+const RecurringTasksCompletionReport: React.FC = () => {
   const { tasks } = useTaskContext();
   const recurringTasks = tasks.filter(task => task.isRecurring);
   
@@ -59,6 +64,8 @@ const RecurringTasksCompletionReport = () => {
         });
         
         // Check if task had to be completed on this day
+        // This is simplified - a more accurate version would check if the task was due on this day
+        // based on its recurring pattern
         const shouldBeCompleted = task.dueDate && isWithinInterval(parseISO(task.dueDate), { start: dayStart, end: dayEnd });
         
         if (shouldBeCompleted) {
@@ -101,102 +108,121 @@ const RecurringTasksCompletionReport = () => {
   const getTodaysRemainingTasks = () => {
     const today = new Date();
     return recurringTasks.filter(task => {
-      if (!task.dueDate) return false;
-      
-      const dueDate = parseISO(task.dueDate);
-      return (
-        isWithinInterval(dueDate, { start: startOfDay(today), end: endOfDay(today) }) &&
-        !task.completed
-      );
+      // If task is due today but not completed
+      if (task.dueDate && task.dueDate === format(today, 'yyyy-MM-dd') && !task.completed) {
+        return true;
+      }
+      return false;
     });
   };
   
   const todaysRemainingTasks = getTodaysRemainingTasks();
   
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Task Completion Report (Last 10 Days)</CardTitle>
-          <CardDescription>
-            Track your recurring task completion progress over the last 10 days
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Task</TableHead>
-                {last10Days.map(day => (
-                  <TableHead key={day.formattedDate} className="text-center">
-                    {day.displayDate}
-                  </TableHead>
-                ))}
-                <TableHead className="text-right">Completion Rate</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {taskCompletionData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={last10Days.length + 2} className="text-center py-6 text-muted-foreground">
-                    No recurring tasks found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                taskCompletionData.map(({ task, dayCompletions, completionRate }) => (
-                  <TableRow key={task.id}>
-                    <TableCell className="font-medium">{task.title}</TableCell>
-                    {dayCompletions.map((day, index) => (
-                      <TableCell key={index} className="text-center">
-                        {renderStatusIcon(day.status)}
-                      </TableCell>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Recurring Tasks Completion Report</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="history" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="history">10-Day History</TabsTrigger>
+            <TabsTrigger value="today">Today's Remaining</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="history">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Task</TableHead>
+                    {last10Days.map(day => (
+                      <TableHead key={day.formattedDate} className="text-center">
+                        {day.displayDate}
+                      </TableHead>
                     ))}
-                    <TableCell className="text-right font-medium">
-                      {completionRate}%
-                    </TableCell>
+                    <TableHead className="text-right">Completion Rate</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Today's Remaining Tasks</CardTitle>
-          <CardDescription>
-            Recurring tasks that need to be completed today
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {todaysRemainingTasks.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              No remaining recurring tasks for today!
+                </TableHeader>
+                <TableBody>
+                  {taskCompletionData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={last10Days.length + 2} className="text-center py-6 text-muted-foreground">
+                        No recurring tasks found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    taskCompletionData.map(({ task, dayCompletions, completionRate }) => (
+                      <TableRow key={task.id}>
+                        <TableCell className="font-medium">{task.title}</TableCell>
+                        {dayCompletions.map((day, index) => (
+                          <TableCell key={index} className="text-center">
+                            {renderStatusIcon(day.status)}
+                          </TableCell>
+                        ))}
+                        <TableCell className="text-right">
+                          <span className={`font-medium ${
+                            completionRate >= 80 ? 'text-green-500' : 
+                            completionRate >= 50 ? 'text-amber-500' : 
+                            'text-red-500'
+                          }`}>
+                            {completionRate}%
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          ) : (
+          </TabsContent>
+          
+          <TabsContent value="today">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Task</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Due Time</TableHead>
+                  <TableHead>Frequency</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {todaysRemainingTasks.map(task => (
-                  <TableRow key={task.id}>
-                    <TableCell className="font-medium">{task.title}</TableCell>
-                    <TableCell className="capitalize">{task.priority}</TableCell>
-                    <TableCell>{task.dueTime || "Anytime"}</TableCell>
+                {todaysRemainingTasks.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                      No remaining tasks for today
+                    </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  todaysRemainingTasks.map(task => (
+                    <TableRow key={task.id}>
+                      <TableCell className="font-medium">{task.title}</TableCell>
+                      <TableCell>
+                        <span className={`inline-block px-2 py-1 rounded text-xs ${
+                          task.priority === 'high' ? 'bg-red-100 text-red-800' : 
+                          task.priority === 'medium' ? 'bg-amber-100 text-amber-800' : 
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                        </span>
+                      </TableCell>
+                      <TableCell>{task.dueTime || 'All day'}</TableCell>
+                      <TableCell>
+                        {task.recurringType === 'custom' ? 
+                          `Every ${task.recurringFrequencyValue} ${task.recurringFrequencyUnit}${task.recurringFrequencyValue !== 1 ? 's' : ''}` :
+                          `${task.recurringType?.charAt(0).toUpperCase()}${task.recurringType?.slice(1)} ${task.recurringInterval && task.recurringInterval > 1 ? `(every ${task.recurringInterval})` : ''}`
+                        }
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 

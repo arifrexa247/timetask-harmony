@@ -124,6 +124,27 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             const interval = task.recurringInterval || 1;
             
             switch(task.recurringType) {
+              case 'custom':
+                if (task.recurringFrequencyUnit && task.recurringFrequencyValue) {
+                  switch (task.recurringFrequencyUnit) {
+                    case 'hour':
+                      nextDueDate = addHours(taskDate, task.recurringFrequencyValue);
+                      break;
+                    case 'day':
+                      nextDueDate = addDays(taskDate, task.recurringFrequencyValue);
+                      break;
+                    case 'week':
+                      nextDueDate = addWeeks(taskDate, task.recurringFrequencyValue);
+                      break;
+                    case 'month':
+                      nextDueDate = addMonths(taskDate, task.recurringFrequencyValue);
+                      break;
+                    case 'year':
+                      nextDueDate = addYears(taskDate, task.recurringFrequencyValue);
+                      break;
+                  }
+                }
+                break;
               case 'hourly':
                 nextDueDate = addHours(taskDate, interval);
                 break;

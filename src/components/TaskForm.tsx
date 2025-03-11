@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -25,7 +26,10 @@ const formSchema = z.object({
   alarmSet: z.boolean().default(false),
   completed: z.boolean().default(false),
   recurring: z.boolean().default(false),
-  frequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
+  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly', 'custom']).optional(),
+  recurringInterval: z.number().min(1).optional(),
+  recurringIntervalUnit: z.enum(['hour', 'day', 'week', 'month', 'year']).optional(),
+  recurringEndDate: z.date().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -56,23 +60,16 @@ const TaskForm = ({
       completed: false,
       recurring: false,
       frequency: 'daily',
+      recurringInterval: 1,
+      recurringIntervalUnit: 'day',
+      recurringEndDate: undefined,
     },
   });
 
-  // Reset form when modal opens/closes or initialData changes
   useEffect(() => {
     if (open) {
       if (initialData) {
-        form.reset({
-          title: initialData.title,
-          description: initialData.description || '',
-          dueDate: initialData.dueDate,
-          dueTime: initialData.dueTime || '',
-          alarmSet: initialData.alarmSet,
-          completed: initialData.completed,
-          recurring: initialData.recurring || false,
-          frequency: initialData.frequency || 'daily',
-        });
+        form.reset(initialData);
       } else {
         form.reset({
           title: '',
@@ -83,32 +80,33 @@ const TaskForm = ({
           completed: false,
           recurring: false,
           frequency: 'daily',
+          recurringInterval: 1,
+          recurringIntervalUnit: 'day',
+          recurringEndDate: undefined,
         });
       }
     }
   }, [open, initialData, form]);
 
-  // Custom handler for time input
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('dueTime', e.target.value);
-    // If time is set, also set alarmSet to true by default
     if (e.target.value) {
       form.setValue('alarmSet', true);
     }
   };
 
   const handleFormSubmit = (data: FormValues) => {
-    // If alarm is set but no time is provided, unset the alarm
     if (data.alarmSet && !data.dueTime) {
       data.alarmSet = false;
     }
-    
-    // Ensure frequency is set when recurring is true
+
     const frequency = data.recurring ? data.frequency : undefined;
-    
-    // Ensure title is not undefined or empty to satisfy the Task type
+    const recurringInterval = data.recurring ? data.recurringInterval : undefined;
+    const recurringIntervalUnit = data.recurring ? data.recurringIntervalUnit : undefined;
+    const recurringEndDate = data.recurring ? data.recurringEndDate : undefined;
+
     const taskData: Omit<Task, 'id' | 'createdAt'> = {
-      title: data.title, // This is required by the schema so it's never undefined
+      title: data.title,
       description: data.description,
       completed: data.completed,
       dueDate: data.dueDate,
@@ -116,9 +114,12 @@ const TaskForm = ({
       alarmSet: data.alarmSet,
       recurring: data.recurring,
       frequency,
+      recurringInterval,
+      recurringIntervalUnit,
+      recurringEndDate,
       missedCount: initialData?.missedCount || 0,
     };
-    
+
     onSubmit(taskData);
     onOpenChange(false);
   };
@@ -131,7 +132,7 @@ const TaskForm = ({
         <DialogHeader>
           <DialogTitle>{mode === 'add' ? 'Add New Task' : 'Edit Task'}</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <FormField
@@ -147,7 +148,7 @@ const TaskForm = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -166,7 +167,7 @@ const TaskForm = ({
                 </FormItem>
               )}
             />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -207,7 +208,7 @@ const TaskForm = ({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="dueTime"
@@ -230,10 +231,10 @@ const TaskForm = ({
                 )}
               />
             </div>
-            
+
             <FormField
               control={form.control}
-              name="isRecurring"
+              name="recurring"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
@@ -254,135 +255,93 @@ const TaskForm = ({
                 </FormItem>
               )}
             />
-            
+
             {isRecurring && (
               <>
                 <FormField
                   control={form.control}
-                  name="recurringType"
+                  name="frequency"
                   render={({ field }) => (
-                    <FormItem className="p-3 border rounded-lg">
-                      <FormLabel>Frequency Type</FormLabel>
+                    <FormItem>
+                      <FormLabel>Frequency</FormLabel>
                       <FormControl>
-                        <RadioGroup
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            // Reset interval unit when changing frequency type
-                            if (value !== 'custom' && form.getValues('recurringIntervalUnit')) {
-                              form.setValue('recurringIntervalUnit', undefined);
-                            }
-                          }}
-                          defaultValue={field.value}
+                        <Select
                           value={field.value}
-                          className="flex flex-col space-y-1 mt-2"
+                          onValueChange={field.onChange}
                         >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="hourly" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Hourly</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="daily" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Daily</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="weekly" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Weekly</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="monthly" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Monthly</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="yearly" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Yearly</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="custom" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Custom</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select frequency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="yearly">Yearly</SelectItem>
+                            <SelectItem value="custom">Custom</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-                
-                <div className="flex gap-4">
-                  <FormField
-                    control={form.control}
-                    name="recurringInterval"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Repeat every</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={1}
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {form.watch('recurringType') === 'custom' && (
+                {form.watch('frequency') === 'custom' && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="recurringInterval"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Repeat every</FormLabel>
+                          <FormControl>
+                            <Input type="number" min={1} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="recurringIntervalUnit"
                       render={({ field }) => (
-                        <FormItem className="flex-1">
+                        <FormItem>
                           <FormLabel>Unit</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select unit" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="minute">Minute(s)</SelectItem>
-                              <SelectItem value="hour">Hour(s)</SelectItem>
-                              <SelectItem value="day">Day(s)</SelectItem>
-                              <SelectItem value="week">Week(s)</SelectItem>
-                              <SelectItem value="month">Month(s)</SelectItem>
-                              <SelectItem value="year">Year(s)</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select unit" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="hour">Hour(s)</SelectItem>
+                                <SelectItem value="day">Day(s)</SelectItem>
+                                <SelectItem value="week">Week(s)</SelectItem>
+                                <SelectItem value="month">Month(s)</SelectItem>
+                                <SelectItem value="year">Year(s)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
-                  )}
-                </div>
-              </>
-                          </FormControl>
-                          <FormLabel className="font-normal">Weekly</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormField
+                      control={form.control}
+                      name="recurringEndDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Repeat until</FormLabel>
                           <FormControl>
-                            <RadioGroupItem value="monthly" />
+                            <Input type="date" {...field} />
                           </FormControl>
-                          <FormLabel className="font-normal">Monthly</FormLabel>
+                          <FormMessage />
                         </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                      )}
+                    />
+                  </>
                 )}
-              />
+              </>
             )}
-            
+
             <FormField
               control={form.control}
               name="alarmSet"
@@ -407,7 +366,7 @@ const TaskForm = ({
                 </FormItem>
               )}
             />
-            
+
             {mode === 'edit' && (
               <FormField
                 control={form.control}
@@ -427,7 +386,7 @@ const TaskForm = ({
                 )}
               />
             )}
-            
+
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 Cancel
