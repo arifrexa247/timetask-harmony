@@ -256,7 +256,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       });
 
       // Check for missed recurring tasks
-      updatedTasks.forEach((task) => { //Corrected: removed index from this loop.  The index wasn't used and was causing the error.
+      updatedTasks.forEach((task, index) => {
         if (task.isRecurring && !task.completed && task.dueDate) {
           const taskDate = new Date(task.dueDate);
           taskDate.setHours(0, 0, 0, 0);
@@ -268,7 +268,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
           // If the due date was yesterday and task wasn't completed
           if (isEqual(taskDate, yesterday)) {
             // Increment the missed count
-            updatedTasks[index] = { //Corrected: kept index here, as it was correctly used in the previous loop.
+            updatedTasks[index] = {
               ...task,
               missedCount: (task.missedCount || 0) + 1,
             };
