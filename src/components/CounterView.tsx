@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 
 const CounterView = () => {
-  const { counters, addCounter, incrementCount } = useCounterContext();
+  const { counters, addCounter } = useCounterContext();
   const [selectedCounterId, setSelectedCounterId] = useState<string | null>(null);
   const [newCounterName, setNewCounterName] = useState("");
   const [activeTab, setActiveTab] = useState("details");
@@ -84,17 +84,17 @@ const CounterView = () => {
             </Button>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="chart">Reports</TabsTrigger>
             </TabsList>
 
-            <div className="p-6 h-[calc(100%-48px)]">
-              <TabsContent value="details" className="h-full mt-0">
+            <div className="p-6 flex-1">
+              <TabsContent value="details" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col">
                 <CounterDetail counter={selectedCounter} />
               </TabsContent>
-              <TabsContent value="chart" className="h-full mt-0">
+              <TabsContent value="chart" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col">
                 <CounterChart counter={selectedCounter} />
               </TabsContent>
             </div>
