@@ -1,0 +1,103 @@
+[plugin:vite:react-swc] × Return statement is not allowed here
+     ╭─[/home/runner/workspace/src/components/CounterChart.tsx:285:1]
+ 282 │       );
+ 283 │     };
+ 284 │     
+ 285 │ ╭─▶   return (
+ 286 │ │       <div className="flex flex-col h-full gap-4">
+ 287 │ │         <div className="flex justify-between mb-4">
+ 288 │ │           <div>
+ 289 │ │             <h3 className="text-sm font-medium mb-2">Time Period</h3>
+ 290 │ │             <div className="flex space-x-2">
+ 291 │ │               <Button
+ 292 │ │                 variant={period === 'weekly' ? 'default' : 'outline'}
+ 293 │ │                 onClick={() => handlePeriodChange('weekly')}
+ 294 │ │               >
+ 295 │ │                 Weekly
+ 296 │ │               </Button>
+ 297 │ │               <Button
+ 298 │ │                 variant={period === 'monthly' ? 'default' : 'outline'}
+ 299 │ │                 onClick={() => handlePeriodChange('monthly')}
+ 300 │ │               >
+ 301 │ │                 Monthly
+ 302 │ │               </Button>
+ 303 │ │               <Button
+ 304 │ │                 variant={period === 'yearly' ? 'default' : 'outline'}
+ 305 │ │                 onClick={() => handlePeriodChange('yearly')}
+ 306 │ │               >
+ 307 │ │                 Yearly
+ 308 │ │               </Button>
+ 309 │ │             </div>
+ 310 │ │           </div>
+ 311 │ │           <div>
+ 312 │ │             <h3 className="text-sm font-medium mb-2">Chart Type</h3>
+ 313 │ │             <div className="flex space-x-2">
+ 314 │ │               <Button
+ 315 │ │                 variant={chartType === 'bar' ? 'default' : 'outline'}
+ 316 │ │                 onClick={() => handleChartTypeChange('bar')}
+ 317 │ │               >
+ 318 │ │                 Bar
+ 319 │ │               </Button>
+ 320 │ │               <Button
+ 321 │ │                 variant={chartType === 'line' ? 'default' : 'outline'}
+ 322 │ │                 onClick={() => handleChartTypeChange('line')}
+ 323 │ │               >
+ 324 │ │                 Line
+ 325 │ │               </Button>
+ 326 │ │               <Button
+ 327 │ │                 variant={chartType === 'pie' ? 'default' : 'outline'}
+ 328 │ │                 onClick={() => handleChartTypeChange('pie')}
+ 329 │ │               >
+ 330 │ │                 Pie
+ 331 │ │               </Button>
+ 332 │ │             </div>
+ 333 │ │           </div>
+ 334 │ │         </div>
+ 335 │ │   
+ 336 │ │         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+ 337 │ │           <Card>
+ 338 │ │             <CardHeader className="pb-2">
+ 339 │ │               <CardTitle className="text-sm font-medium">Total Taps</CardTitle>
+ 340 │ │             </CardHeader>
+ 341 │ │             <CardContent>
+ 342 │ │               <div className="text-2xl font-bold">{totalTaps}</div>
+ 343 │ │             </CardContent>
+ 344 │ │           </Card>
+ 345 │ │   
+ 346 │ │           <Card>
+ 347 │ │             <CardHeader className="pb-2">
+ 348 │ │               <CardTitle className="text-sm font-medium">Average Taps Per Day</CardTitle>
+ 349 │ │             </CardHeader>
+ 350 │ │             <CardContent>
+ 351 │ │               <div className="text-2xl font-bold">{avgTaps}</div>
+ 352 │ │             </CardContent>
+ 353 │ │           </Card>
+ 354 │ │   
+ 355 │ │           <Card>
+ 356 │ │             <CardHeader className="pb-2">
+ 357 │ │               <CardTitle className="text-sm font-medium">Highest Day</CardTitle>
+ 358 │ │             </CardHeader>
+ 359 │ │             <CardContent>
+ 360 │ │               <div className="text-2xl font-bold">{highestDay.count}</div>
+ 361 │ │               <div className="text-sm text-muted-foreground">{highestDay.date}</div>
+ 362 │ │             </CardContent>
+ 363 │ │           </Card>
+ 364 │ │         </div>
+ 365 │ │   
+ 366 │ │         <div className="flex-1 min-h-[300px]">
+ 367 │ │           {renderChartContent()}
+ 368 │ │         </div>
+ 369 │ │       </div>
+ 370 │ ╰─▶   );
+ 371 │     };
+ 372 │     
+ 373 │     export default CounterChart;
+     ╰────
+  × Expression expected
+     ╭─[/home/runner/workspace/src/components/CounterChart.tsx:371:1]
+ 368 │       </div>
+ 369 │     </div>
+ 370 │   );
+ 371 │ };
+     · ─
+ 372 │
