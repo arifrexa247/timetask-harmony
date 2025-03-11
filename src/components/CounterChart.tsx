@@ -137,7 +137,7 @@ const CounterChart: React.FC<CounterChartProps> = ({ counter }) => {
     <div className="flex flex-col h-full gap-4">
       <div className="flex justify-between mb-4">
         <div>
-          <h3 className="text-sm font-medium mb-2">Period</h3>
+          <h3 className="text-sm font-medium mb-2">Time Period</h3>
           <div className="flex space-x-2">
             <Button
               variant={period === 'weekly' ? 'default' : 'outline'}
@@ -162,7 +162,6 @@ const CounterChart: React.FC<CounterChartProps> = ({ counter }) => {
             </Button>
           </div>
         </div>
-
         <div>
           <h3 className="text-sm font-medium mb-2">Chart Type</h3>
           <div className="flex space-x-2">
