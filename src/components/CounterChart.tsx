@@ -1,10 +1,11 @@
-
 import React, { useState } from "react";
 import { Counter } from "@/types/task";
 import { useCounterContext } from "@/contexts/CounterContext";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button"; // Added import for Button component
+
 
 interface CounterChartProps {
   counter: Counter;
@@ -16,20 +17,29 @@ const CounterChart: React.FC<CounterChartProps> = ({ counter }) => {
   const [chartType, setChartType] = useState<'bar' | 'line' | 'pie'>('bar');
 
   const chartData = getCounterHistory(counter.id, period);
-  
+
   // Calculate total taps for the period
   const totalTaps = chartData.reduce((sum, entry) => sum + entry.count, 0);
-  
+
   // Calculate average taps per day
   const avgTaps = chartData.length > 0 ? (totalTaps / chartData.length).toFixed(1) : '0';
 
   // Calculate highest day
-  const highestDay = chartData.length > 0 
+  const highestDay = chartData.length > 0
     ? chartData.reduce((max, entry) => entry.count > max.count ? entry : max, chartData[0])
     : { date: 'N/A', count: 0 };
 
   // Colors for pie chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
+
+  const handlePeriodChange = (newPeriod: 'weekly' | 'monthly' | 'yearly') => {
+    setPeriod(newPeriod);
+  };
+
+  const handleChartTypeChange = (newChartType: 'bar' | 'line' | 'pie') => {
+    setChartType(newChartType);
+  };
+
 
   const renderChartContent = () => {
     if (chartData.length === 0) {
@@ -49,10 +59,10 @@ const CounterChart: React.FC<CounterChartProps> = ({ counter }) => {
               margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
             >
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis 
-                dataKey="date" 
-                angle={-45} 
-                textAnchor="end" 
+              <XAxis
+                dataKey="date"
+                angle={-45}
+                textAnchor="end"
                 height={60}
                 tick={{ fontSize: 12 }}
               />
@@ -70,20 +80,20 @@ const CounterChart: React.FC<CounterChartProps> = ({ counter }) => {
               margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
             >
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis 
-                dataKey="date" 
-                angle={-45} 
-                textAnchor="end" 
+              <XAxis
+                dataKey="date"
+                angle={-45}
+                textAnchor="end"
                 height={60}
                 tick={{ fontSize: 12 }}
               />
               <YAxis />
               <Tooltip />
-              <Line 
-                type="monotone" 
-                dataKey="count" 
-                stroke="#8884d8" 
-                activeDot={{ r: 8 }} 
+              <Line
+                type="monotone"
+                dataKey="count"
+                stroke="#8884d8"
+                activeDot={{ r: 8 }}
                 name="Taps"
               />
             </LineChart>
@@ -95,7 +105,7 @@ const CounterChart: React.FC<CounterChartProps> = ({ counter }) => {
           name: entry.date,
           value: entry.count
         }));
-        
+
         return (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -124,23 +134,61 @@ const CounterChart: React.FC<CounterChartProps> = ({ counter }) => {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
-        <Tabs value={period} onValueChange={(value) => setPeriod(value as any)} className="w-full sm:w-auto">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="weekly">Weekly</TabsTrigger>
-            <TabsTrigger value="monthly">Monthly</TabsTrigger>
-            <TabsTrigger value="yearly">Yearly</TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="flex flex-col h-full gap-4">
+      <div className="flex justify-between mb-4">
+        <div>
+          <h3 className="text-sm font-medium mb-2">Period</h3>
+          <div className="flex space-x-2">
+            <Button
+              variant={period === 'weekly' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handlePeriodChange('weekly')}
+            >
+              Weekly
+            </Button>
+            <Button
+              variant={period === 'monthly' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handlePeriodChange('monthly')}
+            >
+              Monthly
+            </Button>
+            <Button
+              variant={period === 'yearly' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handlePeriodChange('yearly')}
+            >
+              Yearly
+            </Button>
+          </div>
+        </div>
 
-        <Tabs value={chartType} onValueChange={(value) => setChartType(value as any)} className="w-full sm:w-auto">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="bar">Bar</TabsTrigger>
-            <TabsTrigger value="line">Line</TabsTrigger>
-            <TabsTrigger value="pie">Pie</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div>
+          <h3 className="text-sm font-medium mb-2">Chart Type</h3>
+          <div className="flex space-x-2">
+            <Button
+              variant={chartType === 'bar' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleChartTypeChange('bar')}
+            >
+              Bar
+            </Button>
+            <Button
+              variant={chartType === 'line' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleChartTypeChange('line')}
+            >
+              Line
+            </Button>
+            <Button
+              variant={chartType === 'pie' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleChartTypeChange('pie')}
+            >
+              Pie
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
