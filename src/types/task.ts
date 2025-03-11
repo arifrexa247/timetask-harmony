@@ -20,3 +20,24 @@ export interface UserPreferences {
   enableNotifications: boolean;
   nightMode: boolean;
 }
+
+export interface Counter {
+  id: string;
+  name: string;
+  count: number;
+  createdAt: Date;
+}
+
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  sections: NoteSection[];
+  createdAt: Date;
+}
+
+export interface NoteSection {
+  id: string;
+  title: string;
+  content: string;
+}

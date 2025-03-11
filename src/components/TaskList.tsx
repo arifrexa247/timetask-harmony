@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
 import TaskItem from './TaskItem';
@@ -11,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 const TaskList = () => {
   const { 
     filteredTasks, 
+    tasks,
     addTask, 
     updateTask, 
     activeFilter, 
@@ -21,6 +23,39 @@ const TaskList = () => {
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   
+  // Get recurring tasks for today's view
+  const getTodayRecurringTasks = () => {
+    // Find recurring tasks that are for today
+    return tasks.filter(task => {
+      // Include all recurring tasks in today's view 
+      if (task.recurring && task.dueDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const taskDate = new Date(task.dueDate);
+        taskDate.setHours(0, 0, 0, 0);
+        return taskDate.getTime() === today.getTime();
+      }
+      return false;
+    });
+  };
+  
+  // Combine filtered tasks with recurring tasks when in today view
+  const displayTasks = () => {
+    if (activeFilter === 'today') {
+      // For Today view, add recurring tasks that should be shown today
+      const recurringToday = getTodayRecurringTasks();
+      
+      // Create a map of filtered task IDs for quick lookup
+      const filteredTaskIds = new Set(filteredTasks.map(task => task.id));
+      
+      // Add recurring tasks that aren't already in filtered tasks
+      const additionalRecurring = recurringToday.filter(task => !filteredTaskIds.has(task.id));
+      
+      return [...filteredTasks, ...additionalRecurring];
+    }
+    
+    return filteredTasks;
+  };
   
   const handleAddTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
     addTask(taskData);
@@ -50,6 +85,8 @@ const TaskList = () => {
     }
   };
 
+  const tasksToDisplay = displayTasks();
+
   return (
     <>
       <div className="flex justify-between items-center mb-6">
@@ -75,7 +112,7 @@ const TaskList = () => {
         
         <TabsContent value="today" className="mt-0">
           <TasksTabContent 
-            tasks={filteredTasks} 
+            tasks={tasksToDisplay} 
             onEditTask={openEditModal} 
             emptyMessage="No tasks for today. Enjoy your day!"
           />
@@ -83,7 +120,7 @@ const TaskList = () => {
         
         <TabsContent value="upcoming" className="mt-0">
           <TasksTabContent 
-            tasks={filteredTasks} 
+            tasks={tasksToDisplay} 
             onEditTask={openEditModal} 
             emptyMessage="No upcoming tasks. Your schedule is clear!"
           />
@@ -91,7 +128,7 @@ const TaskList = () => {
         
         <TabsContent value="all" className="mt-0">
           <TasksTabContent 
-            tasks={filteredTasks} 
+            tasks={tasksToDisplay} 
             onEditTask={openEditModal} 
             emptyMessage="No tasks found. Add a task to get started!"
           />
