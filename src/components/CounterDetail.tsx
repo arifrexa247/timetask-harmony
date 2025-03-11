@@ -2,7 +2,7 @@
 import React from "react";
 import { Counter } from "@/types/task";
 import { Button } from "@/components/ui/button";
-import { useCounter } from "@/contexts/CounterContext";
+import { useCounterContext as useCounter } from "@/contexts/CounterContext";
 
 interface CounterDetailProps {
   counter: Counter;

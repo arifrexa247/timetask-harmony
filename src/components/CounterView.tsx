@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import CounterChart from "./CounterChart";
 import CounterDetail from "./CounterDetail";
-import { useCounter } from "@/contexts/CounterContext";
+import { useCounterContext as useCounter } from "@/contexts/CounterContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const CounterView = () => {
