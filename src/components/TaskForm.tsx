@@ -233,7 +233,7 @@ const TaskForm = ({
             
             <FormField
               control={form.control}
-              name="recurring"
+              name="isRecurring"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
@@ -256,28 +256,116 @@ const TaskForm = ({
             />
             
             {isRecurring && (
-              <FormField
-                control={form.control}
-                name="frequency"
-                render={({ field }) => (
-                  <FormItem className="p-3 border rounded-lg">
-                    <FormLabel>Frequency</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        value={field.value}
-                        className="flex flex-col space-y-1 mt-2"
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="daily" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Daily</FormLabel>
+              <>
+                <FormField
+                  control={form.control}
+                  name="recurringType"
+                  render={({ field }) => (
+                    <FormItem className="p-3 border rounded-lg">
+                      <FormLabel>Frequency Type</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Reset interval unit when changing frequency type
+                            if (value !== 'custom' && form.getValues('recurringIntervalUnit')) {
+                              form.setValue('recurringIntervalUnit', undefined);
+                            }
+                          }}
+                          defaultValue={field.value}
+                          value={field.value}
+                          className="flex flex-col space-y-1 mt-2"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="hourly" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Hourly</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="daily" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Daily</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="weekly" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Weekly</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="monthly" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Monthly</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="yearly" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Yearly</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="custom" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Custom</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex gap-4">
+                  <FormField
+                    control={form.control}
+                    name="recurringInterval"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Repeat every</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={1}
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {form.watch('recurringType') === 'custom' && (
+                    <FormField
+                      control={form.control}
+                      name="recurringIntervalUnit"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Unit</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="minute">Minute(s)</SelectItem>
+                              <SelectItem value="hour">Hour(s)</SelectItem>
+                              <SelectItem value="day">Day(s)</SelectItem>
+                              <SelectItem value="week">Week(s)</SelectItem>
+                              <SelectItem value="month">Month(s)</SelectItem>
+                              <SelectItem value="year">Year(s)</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="weekly" />
+                      )}
+                    />
+                  )}
+                </div>
+              </>
                           </FormControl>
                           <FormLabel className="font-normal">Weekly</FormLabel>
                         </FormItem>

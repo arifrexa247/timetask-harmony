@@ -83,40 +83,144 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('preferences', JSON.stringify(preferences));
   }, [preferences]);
 
-  // Check for recurring tasks that need to be reset each day
+  // Check for recurring tasks that need to be reset
   useEffect(() => {
     const checkRecurringTasks = () => {
-      const today = new Date();
+      const now = new Date();
+      const today = new Date(now);
       today.setHours(0, 0, 0, 0);
       
       let updatedTasks = [...tasks];
       let tasksUpdated = false;
       
-      // Check each completed recurring task
+      // Check each recurring task
       updatedTasks.forEach((task, index) => {
-        if (task.recurring && task.completed && task.dueDate) {
+        if (task.isRecurring && task.dueDate) {
           const taskDate = new Date(task.dueDate);
-          taskDate.setHours(0, 0, 0, 0);
+          const taskTime = task.dueTime ? task.dueTime.split(':').map(Number) : [0, 0];
+          taskDate.setHours(taskTime[0], taskTime[1], 0, 0);
           
           let shouldReset = false;
           let nextDueDate: Date | undefined;
           
-          // Calculate next due date based on frequency
-          if (task.frequency === 'daily') {
-            nextDueDate = addDays(taskDate, 1);
-            shouldReset = isBefore(nextDueDate, today) || isEqual(nextDueDate, today);
-          } else if (task.frequency === 'weekly') {
-            nextDueDate = addWeeks(taskDate, 1);
-            shouldReset = isBefore(nextDueDate, today) || isEqual(nextDueDate, today);
-          } else if (task.frequency === 'monthly') {
-            nextDueDate = addMonths(taskDate, 1);
-            shouldReset = isBefore(nextDueDate, today) || isEqual(nextDueDate, today);
+          // Record completion history for completed tasks
+          if (task.completed && !task.lastCompleted) {
+            const completionHistory = task.completionHistory || [];
+            completionHistory.push({
+              date: now.toISOString(),
+              completed: true
+            });
+            
+            updatedTasks[index] = {
+              ...task,
+              lastCompleted: now.toISOString(),
+              completionHistory: completionHistory
+            };
+            tasksUpdated = true;
+          }
+          
+          // Calculate next due date based on recurring type and interval
+          if (task.completed || isBefore(taskDate, now)) {
+            const interval = task.recurringInterval || 1;
+            
+            switch(task.recurringType) {
+              case 'hourly':
+                nextDueDate = addHours(taskDate, interval);
+                break;
+              case 'daily':
+                nextDueDate = addDays(taskDate, interval);
+                break;
+              case 'weekly':
+                nextDueDate = addWeeks(taskDate, interval);
+                break;
+              case 'monthly':
+                nextDueDate = addMonths(taskDate, interval);
+                break;
+              case 'yearly':
+                nextDueDate = addYears(taskDate, interval);
+                break;
+              case 'custom':
+                // Handle custom intervals based on the unit
+                switch(task.recurringIntervalUnit) {
+                  case 'minute':
+                    nextDueDate = addMinutes(taskDate, interval);
+                    break;
+                  case 'hour':
+                    nextDueDate = addHours(taskDate, interval);
+                    break;
+                  case 'day':
+                    nextDueDate = addDays(taskDate, interval);
+                    break;
+                  case 'week':
+                    nextDueDate = addWeeks(taskDate, interval);
+                    break;
+                  case 'month':
+                    nextDueDate = addMonths(taskDate, interval);
+                    break;
+                  case 'year':
+                    nextDueDate = addYears(taskDate, interval);
+                    break;
+                  default:
+                    nextDueDate = addDays(taskDate, interval);
+                }
+                break;
+              default:
+                nextDueDate = addDays(taskDate, 1);
+            }
+            
+            shouldReset = task.completed || isBefore(taskDate, now);
           }
           
           if (shouldReset && nextDueDate) {
             // If the next due date is in the past, keep advancing until it's today or in the future
-            while (isBefore(nextDueDate, today)) {
-              if (task.frequency === 'daily') {
+            while (isBefore(nextDueDate, now)) {
+              const interval = task.recurringInterval || 1;
+              
+              switch(task.recurringType) {
+                case 'hourly':
+                  nextDueDate = addHours(nextDueDate, interval);
+                  break;
+                case 'daily':
+                  nextDueDate = addDays(nextDueDate, interval);
+                  break;
+                case 'weekly':
+                  nextDueDate = addWeeks(nextDueDate, interval);
+                  break;
+                case 'monthly':
+                  nextDueDate = addMonths(nextDueDate, interval);
+                  break;
+                case 'yearly':
+                  nextDueDate = addYears(nextDueDate, interval);
+                  break;
+                case 'custom':
+                  // Handle custom intervals based on the unit
+                  switch(task.recurringIntervalUnit) {
+                    case 'minute':
+                      nextDueDate = addMinutes(nextDueDate, interval);
+                      break;
+                    case 'hour':
+                      nextDueDate = addHours(nextDueDate, interval);
+                      break;
+                    case 'day':
+                      nextDueDate = addDays(nextDueDate, interval);
+                      break;
+                    case 'week':
+                      nextDueDate = addWeeks(nextDueDate, interval);
+                      break;
+                    case 'month':
+                      nextDueDate = addMonths(nextDueDate, interval);
+                      break;
+                    case 'year':
+                      nextDueDate = addYears(nextDueDate, interval);
+                      break;
+                    default:
+                      nextDueDate = addDays(nextDueDate, interval);
+                  }
+                  break;
+                default:
+                  nextDueDate = addDays(nextDueDate, 1);
+              }
+            }
                 nextDueDate = addDays(nextDueDate, 1);
               } else if (task.frequency === 'weekly') {
                 nextDueDate = addWeeks(nextDueDate, 1);

@@ -1,16 +1,24 @@
+export type TaskPriority = 'low' | 'medium' | 'high';
+export type RecurringFrequency = 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
 
 export interface Task {
   id: string;
   title: string;
-  description?: string;
+  description: string;
+  priority: TaskPriority;
   completed: boolean;
-  dueDate?: Date;
+  createdAt: string;
+  dueDate?: string;
   dueTime?: string;
-  alarmSet: boolean;
-  createdAt: Date;
-  category?: string;
-  recurring?: boolean;
-  frequency?: 'daily' | 'weekly' | 'monthly';
+  isRecurring: boolean;
+  recurringType?: RecurringFrequency;
+  recurringInterval?: number;
+  recurringIntervalUnit?: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
+  lastCompleted?: string;
+  completionHistory?: {
+    date: string;
+    completed: boolean;
+  }[];
   missedCount?: number;
 }
 

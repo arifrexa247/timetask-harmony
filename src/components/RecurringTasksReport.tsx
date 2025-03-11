@@ -1,49 +1,62 @@
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useTaskContext } from '@/contexts/TaskContext';
+import { Task } from '@/types/task';
+import { Plus, Pencil, Trash, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription,
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Repeat, Check, Plus, MoreVertical, Pencil, Trash, AlertCircle } from 'lucide-react';
-import { Task } from '@/types/task';
+import RecurringTasksCompletionReport from './RecurringTasksCompletionReport';
+
 
 const RecurringTasksReport = () => {
   const { tasks, addTask, updateTask, deleteTask, completeTask } = useTaskContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  
+
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -113,10 +126,10 @@ const RecurringTasksReport = () => {
 
   const getRecurringText = (task: Task) => {
     if (!task.isRecurring) return 'Not recurring';
-    
+
     const interval = task.recurringInterval || 1;
     const intervalText = interval > 1 ? `${interval} ${task.recurringType}s` : task.recurringType;
-    
+
     return `Every ${intervalText}`;
   };
 
@@ -142,8 +155,8 @@ const RecurringTasksReport = () => {
           filteredTasks.map(task => (
             <TableRow key={task.id}>
               <TableCell>
-                <Checkbox 
-                  checked={task.completed} 
+                <Checkbox
+                  checked={task.completed}
                   onCheckedChange={() => completeTask(task.id)}
                 />
               </TableCell>
@@ -221,8 +234,8 @@ const RecurringTasksReport = () => {
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Recurring Task' : 'Add Recurring Task'}</DialogTitle>
             <DialogDescription>
-              {isEditMode 
-                ? 'Update your recurring task details below.' 
+              {isEditMode
+                ? 'Update your recurring task details below.'
                 : 'Create a new recurring task that repeats at your chosen interval.'}
             </DialogDescription>
           </DialogHeader>
@@ -235,9 +248,9 @@ const RecurringTasksReport = () => {
                 value={isEditMode ? editingTask?.title || '' : newTask.title}
                 onChange={(e) => {
                   if (isEditMode && editingTask) {
-                    setEditingTask({...editingTask, title: e.target.value});
+                    setEditingTask({ ...editingTask, title: e.target.value });
                   } else {
-                    setNewTask({...newTask, title: e.target.value});
+                    setNewTask({ ...newTask, title: e.target.value });
                   }
                 }}
               />
@@ -250,9 +263,9 @@ const RecurringTasksReport = () => {
                 value={isEditMode ? editingTask?.description || '' : newTask.description}
                 onChange={(e) => {
                   if (isEditMode && editingTask) {
-                    setEditingTask({...editingTask, description: e.target.value});
+                    setEditingTask({ ...editingTask, description: e.target.value });
                   } else {
-                    setNewTask({...newTask, description: e.target.value});
+                    setNewTask({ ...newTask, description: e.target.value });
                   }
                 }}
               />
@@ -263,9 +276,9 @@ const RecurringTasksReport = () => {
                 value={isEditMode ? editingTask?.priority || 'medium' : newTask.priority}
                 onValueChange={(value) => {
                   if (isEditMode && editingTask) {
-                    setEditingTask({...editingTask, priority: value});
+                    setEditingTask({ ...editingTask, priority: value });
                   } else {
-                    setNewTask({...newTask, priority: value});
+                    setNewTask({ ...newTask, priority: value });
                   }
                 }}
               >
@@ -285,9 +298,9 @@ const RecurringTasksReport = () => {
                 value={isEditMode ? editingTask?.recurringType || 'daily' : newTask.recurringType}
                 onValueChange={(value) => {
                   if (isEditMode && editingTask) {
-                    setEditingTask({...editingTask, recurringType: value});
+                    setEditingTask({ ...editingTask, recurringType: value });
                   } else {
-                    setNewTask({...newTask, recurringType: value});
+                    setNewTask({ ...newTask, recurringType: value });
                   }
                 }}
               >
@@ -308,9 +321,9 @@ const RecurringTasksReport = () => {
                 onValueChange={(value) => {
                   const interval = parseInt(value, 10);
                   if (isEditMode && editingTask) {
-                    setEditingTask({...editingTask, recurringInterval: interval});
+                    setEditingTask({ ...editingTask, recurringInterval: interval });
                   } else {
-                    setNewTask({...newTask, recurringInterval: interval});
+                    setNewTask({ ...newTask, recurringInterval: interval });
                   }
                 }}
               >
