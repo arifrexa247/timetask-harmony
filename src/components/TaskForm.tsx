@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock, AlarmClock } from 'lucide-react';
+import { CalendarIcon, Clock, AlarmClock, Repeat } from 'lucide-react';
 import { Task } from '@/types/task';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -23,6 +24,8 @@ const formSchema = z.object({
   dueTime: z.string().optional(),
   alarmSet: z.boolean().default(false),
   completed: z.boolean().default(false),
+  recurring: z.boolean().default(false),
+  frequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -51,6 +54,8 @@ const TaskForm = ({
       dueTime: '',
       alarmSet: false,
       completed: false,
+      recurring: false,
+      frequency: 'daily',
     },
   });
 
@@ -65,6 +70,8 @@ const TaskForm = ({
           dueTime: initialData.dueTime || '',
           alarmSet: initialData.alarmSet,
           completed: initialData.completed,
+          recurring: initialData.recurring || false,
+          frequency: initialData.frequency || 'daily',
         });
       } else {
         form.reset({
@@ -74,6 +81,8 @@ const TaskForm = ({
           dueTime: '',
           alarmSet: false,
           completed: false,
+          recurring: false,
+          frequency: 'daily',
         });
       }
     }
@@ -94,6 +103,9 @@ const TaskForm = ({
       data.alarmSet = false;
     }
     
+    // Ensure frequency is set when recurring is true
+    const frequency = data.recurring ? data.frequency : undefined;
+    
     // Ensure title is not undefined or empty to satisfy the Task type
     const taskData: Omit<Task, 'id' | 'createdAt'> = {
       title: data.title, // This is required by the schema so it's never undefined
@@ -102,11 +114,16 @@ const TaskForm = ({
       dueDate: data.dueDate,
       dueTime: data.dueTime,
       alarmSet: data.alarmSet,
+      recurring: data.recurring,
+      frequency,
+      missedCount: initialData?.missedCount || 0,
     };
     
     onSubmit(taskData);
     onOpenChange(false);
   };
+
+  const isRecurring = form.watch('recurring');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -213,6 +230,70 @@ const TaskForm = ({
                 )}
               />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="recurring"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="flex items-center">
+                      <Repeat className="mr-2 h-4 w-4" />
+                      Recurring task
+                    </FormLabel>
+                    <FormDescription>
+                      This task repeats on a regular schedule
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            {isRecurring && (
+              <FormField
+                control={form.control}
+                name="frequency"
+                render={({ field }) => (
+                  <FormItem className="p-3 border rounded-lg">
+                    <FormLabel>Frequency</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                        className="flex flex-col space-y-1 mt-2"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="daily" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Daily</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="weekly" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Weekly</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="monthly" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Monthly</FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             
             <FormField
               control={form.control}

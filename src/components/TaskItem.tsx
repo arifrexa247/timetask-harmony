@@ -5,9 +5,10 @@ import { Task } from '@/types/task';
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Trash, Clock, AlarmClock, Edit, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash, Clock, AlarmClock, Edit, ChevronDown, ChevronUp, Repeat } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface TaskItemProps {
   task: Task;
@@ -38,6 +39,15 @@ const TaskItem = ({ task, onEdit }: TaskItemProps) => {
     return `${displayHour}:${minutes} ${isPM ? 'PM' : 'AM'}`;
   };
 
+  const getFrequencyText = (frequency?: 'daily' | 'weekly' | 'monthly') => {
+    switch (frequency) {
+      case 'daily': return 'Repeats daily';
+      case 'weekly': return 'Repeats weekly';
+      case 'monthly': return 'Repeats monthly';
+      default: return '';
+    }
+  };
+
   return (
     <Card 
       className={cn(
@@ -46,7 +56,9 @@ const TaskItem = ({ task, onEdit }: TaskItemProps) => {
           ? "border-l-todo-success bg-muted/30" 
           : task.alarmSet 
             ? "border-l-todo-warning" 
-            : "border-l-todo-primary"
+            : task.recurring
+              ? "border-l-green-600"
+              : "border-l-todo-primary"
       )}
     >
       <CardContent className="p-4">
@@ -66,14 +78,29 @@ const TaskItem = ({ task, onEdit }: TaskItemProps) => {
               onClick={() => setExpanded(!expanded)}
             >
               <div className="flex-1">
-                <h3 
-                  className={cn(
-                    "font-medium text-lg truncate",
-                    task.completed && "line-through text-muted-foreground"
+                <div className="flex items-center gap-2">
+                  <h3 
+                    className={cn(
+                      "font-medium text-lg truncate",
+                      task.completed && "line-through text-muted-foreground"
+                    )}
+                  >
+                    {task.title}
+                  </h3>
+                  
+                  {task.recurring && (
+                    <Badge variant="outline" className="gap-1 flex items-center text-green-600 border-green-600">
+                      <Repeat className="h-3 w-3" />
+                      {task.frequency}
+                    </Badge>
                   )}
-                >
-                  {task.title}
-                </h3>
+                  
+                  {task.missedCount && task.missedCount > 0 && (
+                    <Badge variant="destructive" className="ml-2">
+                      Missed: {task.missedCount}
+                    </Badge>
+                  )}
+                </div>
                 
                 {(task.dueDate || task.dueTime) && (
                   <div className="flex items-center text-sm text-muted-foreground gap-1 mt-1">
@@ -84,6 +111,13 @@ const TaskItem = ({ task, onEdit }: TaskItemProps) => {
                     {task.alarmSet && (
                       <AlarmClock className="h-3.5 w-3.5 ml-2 text-todo-warning" />
                     )}
+                  </div>
+                )}
+                
+                {task.recurring && (
+                  <div className="flex items-center text-sm text-green-600 gap-1 mt-1">
+                    <Repeat className="h-3.5 w-3.5" />
+                    {getFrequencyText(task.frequency)}
                   </div>
                 )}
               </div>

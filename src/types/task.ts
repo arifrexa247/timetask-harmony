@@ -9,6 +9,9 @@ export interface Task {
   alarmSet: boolean;
   createdAt: Date;
   category?: string;
+  recurring?: boolean;
+  frequency?: 'daily' | 'weekly' | 'monthly';
+  missedCount?: number;
 }
 
 export interface UserPreferences {

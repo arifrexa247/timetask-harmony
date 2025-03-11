@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import TaskList from '@/components/TaskList';
 import CompletedTasksTable from '@/components/CompletedTasksTable';
 import UncompletedTasksTable from '@/components/UncompletedTasksTable';
+import RecurringTasksReport from '@/components/RecurringTasksReport';
 import { TaskProvider } from '@/contexts/TaskContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
@@ -17,10 +18,11 @@ const Index = () => {
         <Header />
         <main className="flex-1 container mx-auto px-4 py-6">
           <Tabs defaultValue="regular" onValueChange={setActiveView} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6 max-w-md mx-auto">
+            <TabsList className="grid w-full grid-cols-4 mb-6 max-w-md mx-auto">
               <TabsTrigger value="regular" className="text-xs sm:text-sm whitespace-normal h-auto py-2">Task List</TabsTrigger>
               <TabsTrigger value="uncompleted" className="text-xs sm:text-sm whitespace-normal h-auto py-2">Uncompleted</TabsTrigger>
               <TabsTrigger value="completed" className="text-xs sm:text-sm whitespace-normal h-auto py-2">Completed</TabsTrigger>
+              <TabsTrigger value="recurring" className="text-xs sm:text-sm whitespace-normal h-auto py-2">Recurring</TabsTrigger>
             </TabsList>
             
             <TabsContent value="regular" className="mt-0">
@@ -33,6 +35,10 @@ const Index = () => {
             
             <TabsContent value="completed" className="mt-0">
               <CompletedTasksTable />
+            </TabsContent>
+            
+            <TabsContent value="recurring" className="mt-0">
+              <RecurringTasksReport />
             </TabsContent>
           </Tabs>
         </main>

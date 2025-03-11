@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Task, UserPreferences } from '@/types/task';
 import { useToast } from '@/hooks/use-toast';
+import { addDays, addWeeks, addMonths, isBefore, startOfDay, isEqual } from 'date-fns';
 
 interface TaskContextType {
   tasks: Task[];
@@ -13,6 +14,7 @@ interface TaskContextType {
   toggleTaskCompletion: (id: string) => void;
   setActiveFilter: (filter: 'today' | 'upcoming' | 'all') => void;
   updatePreferences: (updates: Partial<UserPreferences>) => void;
+  getRecurringTasksReport: () => { missedTasks: Task[], completionRate: number };
 }
 
 const defaultPreferences: UserPreferences = {
@@ -80,6 +82,111 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem('preferences', JSON.stringify(preferences));
   }, [preferences]);
+
+  // Check for recurring tasks that need to be reset each day
+  useEffect(() => {
+    const checkRecurringTasks = () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      let updatedTasks = [...tasks];
+      let tasksUpdated = false;
+      
+      // Check each completed recurring task
+      updatedTasks.forEach((task, index) => {
+        if (task.recurring && task.completed && task.dueDate) {
+          const taskDate = new Date(task.dueDate);
+          taskDate.setHours(0, 0, 0, 0);
+          
+          let shouldReset = false;
+          let nextDueDate: Date | undefined;
+          
+          // Calculate next due date based on frequency
+          if (task.frequency === 'daily') {
+            nextDueDate = addDays(taskDate, 1);
+            shouldReset = isBefore(nextDueDate, today) || isEqual(nextDueDate, today);
+          } else if (task.frequency === 'weekly') {
+            nextDueDate = addWeeks(taskDate, 1);
+            shouldReset = isBefore(nextDueDate, today) || isEqual(nextDueDate, today);
+          } else if (task.frequency === 'monthly') {
+            nextDueDate = addMonths(taskDate, 1);
+            shouldReset = isBefore(nextDueDate, today) || isEqual(nextDueDate, today);
+          }
+          
+          if (shouldReset && nextDueDate) {
+            // If the next due date is in the past, keep advancing until it's today or in the future
+            while (isBefore(nextDueDate, today)) {
+              if (task.frequency === 'daily') {
+                nextDueDate = addDays(nextDueDate, 1);
+              } else if (task.frequency === 'weekly') {
+                nextDueDate = addWeeks(nextDueDate, 1);
+              } else if (task.frequency === 'monthly') {
+                nextDueDate = addMonths(nextDueDate, 1);
+              }
+            }
+            
+            // Reset the task for the next occurrence
+            updatedTasks[index] = {
+              ...task,
+              completed: false,
+              dueDate: nextDueDate,
+              missedCount: 0,
+            };
+            
+            tasksUpdated = true;
+          }
+        }
+      });
+      
+      // Check for missed recurring tasks
+      updatedTasks.forEach((task, index) => {
+        if (task.recurring && !task.completed && task.dueDate) {
+          const taskDate = new Date(task.dueDate);
+          taskDate.setHours(0, 0, 0, 0);
+          
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          yesterday.setHours(0, 0, 0, 0);
+          
+          // If the due date was yesterday and task wasn't completed
+          if (isEqual(taskDate, yesterday)) {
+            // Increment the missed count
+            updatedTasks[index] = {
+              ...task,
+              missedCount: (task.missedCount || 0) + 1,
+            };
+            
+            tasksUpdated = true;
+          }
+        }
+      });
+      
+      if (tasksUpdated) {
+        setTasks(updatedTasks);
+      }
+    };
+    
+    // Check recurring tasks on component mount
+    checkRecurringTasks();
+    
+    // Set up daily check at midnight
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    const timeToMidnight = tomorrow.getTime() - now.getTime();
+    
+    const midnightTimeout = setTimeout(() => {
+      checkRecurringTasks();
+      
+      // Then set interval for subsequent days
+      const dailyInterval = setInterval(checkRecurringTasks, 24 * 60 * 60 * 1000);
+      return () => clearInterval(dailyInterval);
+    }, timeToMidnight);
+    
+    return () => clearTimeout(midnightTimeout);
+  }, [tasks]);
 
   // Request notification permission on startup if enabled
   useEffect(() => {
@@ -168,6 +275,24 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       description: `It's time for: ${task.title}`,
       duration: 10000,
     });
+  };
+
+  // Get report on recurring tasks
+  const getRecurringTasksReport = () => {
+    // Filter recurring tasks
+    const recurringTasks = tasks.filter(task => task.recurring);
+    
+    // Find missed recurring tasks
+    const missedTasks = recurringTasks.filter(task => 
+      (task.missedCount || 0) > 0
+    );
+    
+    // Calculate completion rate
+    const completionRate = recurringTasks.length > 0 
+      ? Math.round(((recurringTasks.length - missedTasks.length) / recurringTasks.length) * 100) 
+      : 100;
+    
+    return { missedTasks, completionRate };
   };
 
   // Set up a timer to check alarms every minute
@@ -266,6 +391,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         toggleTaskCompletion,
         setActiveFilter,
         updatePreferences,
+        getRecurringTasksReport,
       }}
     >
       {children}
