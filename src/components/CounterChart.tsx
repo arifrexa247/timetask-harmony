@@ -1,4 +1,3 @@
-
 import { useCounterContext } from '@/contexts/CounterContext';
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -11,9 +10,9 @@ interface CounterChartProps {
 const CounterChart = ({ counterId }: CounterChartProps) => {
   const { getCounterHistory } = useCounterContext();
   const [period, setPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
-  
+
   const chartData = getCounterHistory(counterId, period);
-  
+
   // No data case
   if (chartData.length === 0) {
     return (
@@ -24,12 +23,12 @@ const CounterChart = ({ counterId }: CounterChartProps) => {
       </div>
     );
   }
-  
+
   return (
     <div className="h-full flex flex-col">
       <div className="mb-4">
-        <Tabs 
-          value={period} 
+        <Tabs
+          value={period}
           onValueChange={(value) => setPeriod(value as 'weekly' | 'monthly' | 'yearly')}
           className="w-full"
         >
@@ -38,7 +37,7 @@ const CounterChart = ({ counterId }: CounterChartProps) => {
             <TabsTrigger value="monthly">Last 30 Days</TabsTrigger>
             <TabsTrigger value="yearly">Last 12 Months</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="weekly" className="mt-4">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
@@ -51,7 +50,7 @@ const CounterChart = ({ counterId }: CounterChartProps) => {
               </BarChart>
             </ResponsiveContainer>
           </TabsContent>
-          
+
           <TabsContent value="monthly" className="mt-4">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
@@ -64,7 +63,7 @@ const CounterChart = ({ counterId }: CounterChartProps) => {
               </BarChart>
             </ResponsiveContainer>
           </TabsContent>
-          
+
           <TabsContent value="yearly" className="mt-4">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
@@ -79,7 +78,7 @@ const CounterChart = ({ counterId }: CounterChartProps) => {
           </TabsContent>
         </Tabs>
       </div>
-      
+
       <div className="overflow-x-auto mt-4">
         <table className="w-full border-collapse">
           <thead>
@@ -103,54 +102,66 @@ const CounterChart = ({ counterId }: CounterChartProps) => {
 };
 
 export default CounterChart;
-import { Counter } from '@/types/task';
+import { useEffect, useState } from "react";
+import { Counter } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface CounterChartProps {
   counter: Counter;
 }
 
-const CounterChart = ({ counter }: CounterChartProps) => {
-  // Simple chart component
-  const maxBars = 10;
-  const barHeight = 20;
-  const maxValue = Math.max(counter.count, 10);
-  
+const CounterChart2 = ({ counter }: CounterChartProps) => {
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (counter && counter.history) {
+      // Convert history to chart data
+      const data = counter.history.map((entry) => ({
+        date: new Date(entry.timestamp).toLocaleDateString(),
+        value: entry.value,
+      }));
+
+      // Only show the last 10 entries if there are more
+      const displayData = data.length > 10 ? data.slice(-10) : data;
+
+      setChartData(displayData);
+    }
+  }, [counter]);
+
+  if (chartData.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-muted-foreground">No data available for chart</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full">
-      <div className="mb-4">
-        <h3 className="text-lg font-medium">{counter.name}</h3>
-        <p className="text-sm text-muted-foreground">Current count: {counter.count}</p>
-      </div>
-      
-      <div className="relative h-[200px] w-full">
-        <div className="absolute left-0 bottom-0 w-full h-full flex items-end">
-          <div 
-            className="bg-primary/80 rounded-t-md transition-all duration-500 ease-in-out"
-            style={{ 
-              width: '100%', 
-              height: `${Math.min(100, (counter.count / maxValue) * 100)}%`
-            }}
+    <div className="h-full w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+          <XAxis dataKey="date" />
+          <YAxis />
+          <Tooltip />
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke="#8884d8"
+            strokeWidth={2}
+            dot={{ strokeWidth: 2 }}
           />
-        </div>
-        
-        {/* Y-axis markers */}
-        <div className="absolute left-0 top-0 h-full flex flex-col justify-between">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="flex items-center">
-              <span className="text-xs text-muted-foreground pr-2">
-                {Math.round(maxValue - (maxValue / 4) * index)}
-              </span>
-              <div className="w-2 border-t border-border" />
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="mt-6 text-center text-sm text-muted-foreground">
-        Created on {new Date(counter.createdAt).toLocaleDateString()}
-      </div>
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 };
 
-export default CounterChart;
+export default CounterChart2;
