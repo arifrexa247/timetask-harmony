@@ -1,12 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNoteContext } from '@/contexts/NoteContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash, Edit, Save, File, FilePlus, Notebook } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Note, NoteSection } from '@/types/task';
 
@@ -34,7 +34,19 @@ const NotesView = () => {
   const [editingSections, setEditingSections] = useState<Record<string, boolean>>({});
   const [editingSectionContent, setEditingSectionContent] = useState<Record<string, string>>({});
   
-  const activeNote = notes.find(note => note.id === activeNoteId);
+  // This ensures we always have the correct active note
+  useEffect(() => {
+    if (notes.length > 0) {
+      // If current active note doesn't exist, set to first note
+      if (!activeNoteId || !notes.find(note => note.id === activeNoteId)) {
+        setActiveNoteId(notes[0].id);
+      }
+    } else {
+      setActiveNoteId(null);
+    }
+  }, [notes, activeNoteId]);
+  
+  const activeNote = notes.find(note => note.id === activeNoteId) || null;
   
   const handleAddNote = () => {
     if (newNoteTitle.trim()) {
@@ -203,9 +215,9 @@ const NotesView = () => {
                 </CardHeader>
                 <CardContent className="flex-grow overflow-auto pb-6">
                   <Tabs defaultValue="main">
-                    <TabsList className="mb-4">
+                    <TabsList className="mb-4 flex flex-wrap">
                       <TabsTrigger value="main">Main Note</TabsTrigger>
-                      {activeNote.sections.map((section, index) => (
+                      {activeNote.sections.map((section) => (
                         <TabsTrigger key={section.id} value={section.id}>
                           {section.title}
                         </TabsTrigger>
@@ -297,6 +309,9 @@ const NotesView = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add New Note</DialogTitle>
+            <DialogDescription>
+              Create a new note to organize your thoughts.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">
@@ -327,6 +342,9 @@ const NotesView = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add New Section</DialogTitle>
+            <DialogDescription>
+              Create a new section to organize your note contents.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">

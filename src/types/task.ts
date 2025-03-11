@@ -26,6 +26,7 @@ export interface Counter {
   name: string;
   count: number;
   createdAt: Date;
+  history?: { date: string; count: number }[];
 }
 
 export interface Note {

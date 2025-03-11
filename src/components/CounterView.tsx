@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { useCounterContext } from '@/contexts/CounterContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Minus, RotateCcw, Trash, Edit, CircleDot } from 'lucide-react';
+import { Plus, Minus, RotateCcw, Trash, Edit, CircleDot, BarChart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { 
   DropdownMenu, 
@@ -13,6 +13,8 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CounterChart from './CounterChart';
 
 const CounterView = () => {
   const { counters, addCounter, incrementCount, resetCount, deleteCounter, updateCounterName } = useCounterContext();
@@ -22,6 +24,9 @@ const CounterView = () => {
   const [activeCounter, setActiveCounter] = useState<string | null>(
     counters.length > 0 ? counters[0].id : null
   );
+  const [activeTab, setActiveTab] = useState<'counter' | 'chart'>('counter');
+  const [isChartDialogOpen, setIsChartDialogOpen] = useState(false);
+  const [chartCounterId, setChartCounterId] = useState<string | null>(null);
 
   const handleAddCounter = () => {
     if (newCounterName.trim()) {
@@ -61,6 +66,11 @@ const CounterView = () => {
     if (activeCounter === id) {
       setActiveCounter(counters.length > 1 ? counters[0].id : null);
     }
+  };
+
+  const openChartDialog = (id: string) => {
+    setChartCounterId(id);
+    setIsChartDialogOpen(true);
   };
 
   const currentCounter = counters.find(counter => counter.id === activeCounter);
@@ -106,37 +116,58 @@ const CounterView = () => {
                     <h4 className="font-medium">{counter.name}</h4>
                     <p className="text-sm text-muted-foreground">Count: {counter.count}</p>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditingCounter({ id: counter.id, name: counter.name })}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Edit Name</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleReset(counter.id)}>
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        <span>Reset Counter</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleDelete(counter.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        <span>Delete Counter</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex items-center space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openChartDialog(counter.id);
+                      }}
+                    >
+                      <BarChart className="h-4 w-4" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                          <span className="sr-only">Open menu</span>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingCounter({ id: counter.id, name: counter.name });
+                        }}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Edit Name</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          handleReset(counter.id);
+                        }}>
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          <span>Reset Counter</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(counter.id);
+                          }}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          <span>Delete Counter</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </CardContent>
                 <div className="px-4 pb-2">
                   <Progress 
                     value={(counter.count / maxCount) * 100} 
                     className="h-1" 
-                    color={counter.count > 0 ? "bg-green-500" : undefined}
                   />
                 </div>
               </Card>
@@ -147,19 +178,35 @@ const CounterView = () => {
             <div className="md:col-span-2">
               <Card className="h-full flex flex-col">
                 <CardHeader>
-                  <CardTitle>{currentCounter.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow flex items-center justify-center">
-                  <div 
-                    className="relative rounded-full border-8 border-primary flex items-center justify-center cursor-pointer transition-transform active:scale-95"
-                    style={{ width: '200px', height: '200px' }}
-                    onClick={() => handleIncrement(currentCounter.id)}
-                  >
-                    <span className="text-5xl font-bold">{currentCounter.count}</span>
-                    <span className="absolute top-full mt-4 text-center w-full text-sm text-muted-foreground">
-                      Tap to count
-                    </span>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>{currentCounter.name}</CardTitle>
+                    <Tabs 
+                      value={activeTab} 
+                      onValueChange={(value) => setActiveTab(value as 'counter' | 'chart')}
+                    >
+                      <TabsList>
+                        <TabsTrigger value="counter">Counter</TabsTrigger>
+                        <TabsTrigger value="chart">Chart</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
                   </div>
+                </CardHeader>
+                <CardContent className="flex-grow flex items-center justify-center p-0">
+                  <TabsContent value="counter" className="flex-grow flex items-center justify-center m-0 p-4 w-full">
+                    <div 
+                      className="relative rounded-full border-8 border-primary flex items-center justify-center cursor-pointer transition-transform active:scale-95"
+                      style={{ width: '200px', height: '200px' }}
+                      onClick={() => handleIncrement(currentCounter.id)}
+                    >
+                      <span className="text-5xl font-bold">{currentCounter.count}</span>
+                      <span className="absolute top-full mt-4 text-center w-full text-sm text-muted-foreground">
+                        Tap to count
+                      </span>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="chart" className="flex-grow m-0 w-full h-full">
+                    <CounterChart counterId={currentCounter.id} />
+                  </TabsContent>
                 </CardContent>
                 <CardFooter className="flex justify-center gap-4 pb-6">
                   <Button 
@@ -189,6 +236,7 @@ const CounterView = () => {
                         <th className="text-left py-3 px-2">Count</th>
                         <th className="text-left py-3 px-2">Created On</th>
                         <th className="text-left py-3 px-2">Progress</th>
+                        <th className="text-left py-3 px-2">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -202,6 +250,16 @@ const CounterView = () => {
                               value={(counter.count / maxCount) * 100} 
                               className="h-2" 
                             />
+                          </td>
+                          <td className="py-3 px-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openChartDialog(counter.id)}
+                            >
+                              <BarChart className="h-4 w-4 mr-1" />
+                              View Report
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -219,6 +277,9 @@ const CounterView = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add New Counter</DialogTitle>
+            <DialogDescription>
+              Create a new counter to track repetitive actions.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">
@@ -249,6 +310,9 @@ const CounterView = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Counter</DialogTitle>
+            <DialogDescription>
+              Modify your counter details.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">
@@ -269,6 +333,26 @@ const CounterView = () => {
             </Button>
             <Button onClick={handleUpdateCounter}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chart Dialog */}
+      <Dialog open={isChartDialogOpen} onOpenChange={setIsChartDialogOpen}>
+        <DialogContent className="sm:max-w-[80vw] h-[80vh] max-h-[600px]">
+          <DialogHeader>
+            <DialogTitle>Counter Statistics</DialogTitle>
+            <DialogDescription>
+              View detailed statistics for your counter.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 h-full">
+            {chartCounterId && <CounterChart counterId={chartCounterId} />}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsChartDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

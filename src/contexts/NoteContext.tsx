@@ -5,10 +5,10 @@ import { useToast } from '@/hooks/use-toast';
 
 interface NoteContextType {
   notes: Note[];
-  addNote: (title: string) => void;
+  addNote: (title: string) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
   deleteNote: (id: string) => void;
-  addNoteSection: (noteId: string, title: string) => void;
+  addNoteSection: (noteId: string, title: string) => string;
   updateNoteSection: (noteId: string, sectionId: string, updates: Partial<NoteSection>) => void;
   deleteNoteSection: (noteId: string, sectionId: string) => void;
 }
@@ -32,7 +32,7 @@ export const NoteProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('notes', JSON.stringify(notes));
   }, [notes]);
 
-  const addNote = (title: string) => {
+  const addNote = (title: string): string => {
     const newNote: Note = {
       id: crypto.randomUUID(),
       title,
@@ -72,7 +72,7 @@ export const NoteProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const addNoteSection = (noteId: string, title: string) => {
+  const addNoteSection = (noteId: string, title: string): string => {
     const newSection: NoteSection = {
       id: crypto.randomUUID(),
       title,
