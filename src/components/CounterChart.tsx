@@ -282,8 +282,6 @@ const CounterChart: React.FC<CounterChartProps> = ({ counter }) => {
   );
 };
 
-};
-
   return (
     <div className="flex flex-col h-full gap-4">
       <div className="flex justify-between mb-4">
