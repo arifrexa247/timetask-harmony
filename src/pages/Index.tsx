@@ -10,7 +10,6 @@ import { TaskProvider } from '@/contexts/TaskContext';
 import { CounterProvider } from '@/contexts/CounterContext';
 import { NoteProvider } from '@/contexts/NoteContext';
 import { useState } from 'react';
-import { Toaster } from '@/components/ui/toaster';
 import { Card, CardContent } from '@/components/ui/card';
 import { ListTodo, RotateCcw, CheckSquare, Repeat, CircleDot, Notebook } from 'lucide-react';
 

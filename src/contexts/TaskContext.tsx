@@ -56,18 +56,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     if (activeFilter === 'today') {
       if (!task.dueDate) return false;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const taskDate = new Date(task.dueDate);
-      taskDate.setHours(0, 0, 0, 0);
-      return taskDate.getTime() === today.getTime();
+      const todayStart = startOfDay(new Date());
+      const taskDateStart = startOfDay(new Date(task.dueDate));
+      return taskDateStart.getTime() === todayStart.getTime();
     } else if (activeFilter === 'upcoming') {
       if (!task.dueDate) return true; // Tasks with no due date are considered upcoming
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const taskDate = new Date(task.dueDate);
-      taskDate.setHours(0, 0, 0, 0);
-      return taskDate.getTime() > today.getTime();
+      const todayStart = startOfDay(new Date());
+      const taskDateStart = startOfDay(new Date(task.dueDate));
+      return taskDateStart.getTime() > todayStart.getTime();
     }
 
     return true; // 'all' filter shows all tasks
@@ -84,226 +80,208 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   }, [preferences]);
 
   // Check for recurring tasks that need to be reset
-  useEffect(() => {
-    const checkRecurringTasks = () => {
-      const now = new Date();
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
+  const checkRecurringTasks = () => {
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
 
-      let updatedTasks = [...tasks];
-      let tasksUpdated = false;
+    let updatedTasks = [...tasks];
+    let tasksUpdated = false;
 
-      // Check each recurring task
-      updatedTasks.forEach((task, index) => {
-        if (task.isRecurring && task.dueDate) {
-          const taskDate = new Date(task.dueDate);
-          const taskTime = task.dueTime ? task.dueTime.split(':').map(Number) : [0, 0];
-          taskDate.setHours(taskTime[0], taskTime[1], 0, 0);
+    // Check each recurring task
+    updatedTasks.forEach((task, index) => {
+      if (task.isRecurring && task.dueDate) {
+        const taskDate = new Date(task.dueDate);
+        const taskTime = task.dueTime ? task.dueTime.split(':').map(Number) : [0, 0];
+        taskDate.setHours(taskTime[0], taskTime[1], 0, 0);
 
-          let shouldReset = false;
-          let nextDueDate: Date | undefined;
+        let shouldReset = false;
+        let nextDueDate: Date | undefined;
 
-          // Record completion history for completed tasks
-          if (task.completed && !task.lastCompleted) {
-            const completionHistory = task.completionHistory || [];
-            completionHistory.push({
-              date: now.toISOString(),
-              completed: true, // Added comma here
-            });
+        // Record completion history for completed tasks
+        if (task.completed && !task.lastCompleted) {
+          const completionHistory = task.completionHistory || [];
+          completionHistory.push({
+            date: now.toISOString(),
+            completed: true,
+          });
 
-            updatedTasks[index] = {
-              ...task,
-              lastCompleted: now.toISOString(),
-              completionHistory: completionHistory
-            };
-            tasksUpdated = true;
+          updatedTasks[index] = {
+            ...task,
+            lastCompleted: now.toISOString(),
+            completionHistory: completionHistory
+          };
+          tasksUpdated = true;
+        }
+
+        // Calculate next due date based on recurring type and interval
+        if (task.completed || isBefore(taskDate, now)) {
+          const interval = task.recurringInterval || 1;
+
+          switch (task.recurringType) {
+            case 'hourly':
+              nextDueDate = addHours(taskDate, interval);
+              break;
+            case 'daily':
+              nextDueDate = addDays(taskDate, interval);
+              break;
+            case 'weekly':
+              nextDueDate = addWeeks(taskDate, interval);
+              break;
+            case 'monthly':
+              nextDueDate = addMonths(taskDate, interval);
+              break;
+            case 'yearly':
+              nextDueDate = addYears(taskDate, interval);
+              break;
+            // Ensure 'custom' with recurringIntervalUnit is handled
+            case 'custom':
+              switch (task.recurringIntervalUnit) {
+                case 'minute':
+                  nextDueDate = addMinutes(taskDate, interval);
+                  break;
+                case 'hour':
+                  nextDueDate = addHours(taskDate, interval);
+                  break;
+                case 'day':
+                  nextDueDate = addDays(taskDate, interval);
+                  break;
+                case 'week':
+                  nextDueDate = addWeeks(taskDate, interval);
+                  break;
+                case 'month':
+                  nextDueDate = addMonths(taskDate, interval);
+                  break;
+                case 'year':
+                  nextDueDate = addYears(taskDate, interval);
+                  break;
+                default: // Default for custom if unit is not set, though UI should prevent this
+                  nextDueDate = addDays(taskDate, interval);
+              }
+              break;
+            default:
+              nextDueDate = addDays(taskDate, 1);
           }
 
-          // Calculate next due date based on recurring type and interval
-          if (task.completed || isBefore(taskDate, now)) {
+          shouldReset = task.completed || isBefore(taskDate, now);
+        }
+
+        if (shouldReset && nextDueDate) {
+          // If the next due date is in the past, keep advancing until it's today or in the future
+          while (isBefore(nextDueDate, now)) {
             const interval = task.recurringInterval || 1;
 
             switch (task.recurringType) {
-              case 'custom':
-                if (task.recurringFrequencyUnit && task.recurringFrequencyValue) {
-                  switch (task.recurringFrequencyUnit) {
-                    case 'hour':
-                      nextDueDate = addHours(taskDate, task.recurringFrequencyValue);
-                      break;
-                    case 'day':
-                      nextDueDate = addDays(taskDate, task.recurringFrequencyValue);
-                      break;
-                    case 'week':
-                      nextDueDate = addWeeks(taskDate, task.recurringFrequencyValue);
-                      break;
-                    case 'month':
-                      nextDueDate = addMonths(taskDate, task.recurringFrequencyValue);
-                      break;
-                    case 'year':
-                      nextDueDate = addYears(taskDate, task.recurringFrequencyValue);
-                      break;
-                  }
-                }
-                break;
               case 'hourly':
-                nextDueDate = addHours(taskDate, interval);
+                nextDueDate = addHours(nextDueDate, interval);
                 break;
               case 'daily':
-                nextDueDate = addDays(taskDate, interval);
+                nextDueDate = addDays(nextDueDate, interval);
                 break;
               case 'weekly':
-                nextDueDate = addWeeks(taskDate, interval);
+                nextDueDate = addWeeks(nextDueDate, interval);
                 break;
               case 'monthly':
-                nextDueDate = addMonths(taskDate, interval);
+                nextDueDate = addMonths(nextDueDate, interval);
                 break;
               case 'yearly':
-                nextDueDate = addYears(taskDate, interval);
+                nextDueDate = addYears(nextDueDate, interval);
                 break;
               case 'custom':
-                // Handle custom intervals based on the unit
                 switch (task.recurringIntervalUnit) {
                   case 'minute':
-                    nextDueDate = addMinutes(taskDate, interval);
+                    nextDueDate = addMinutes(nextDueDate, interval);
                     break;
                   case 'hour':
-                    nextDueDate = addHours(taskDate, interval);
+                    nextDueDate = addHours(nextDueDate, interval);
                     break;
                   case 'day':
-                    nextDueDate = addDays(taskDate, interval);
+                    nextDueDate = addDays(nextDueDate, interval);
                     break;
                   case 'week':
-                    nextDueDate = addWeeks(taskDate, interval);
+                    nextDueDate = addWeeks(nextDueDate, interval);
                     break;
                   case 'month':
-                    nextDueDate = addMonths(taskDate, interval);
+                    nextDueDate = addMonths(nextDueDate, interval);
                     break;
                   case 'year':
-                    nextDueDate = addYears(taskDate, interval);
+                    nextDueDate = addYears(nextDueDate, interval);
                     break;
                   default:
-                    nextDueDate = addDays(taskDate, interval);
+                    nextDueDate = addDays(nextDueDate, interval);
                 }
                 break;
               default:
-                nextDueDate = addDays(taskDate, 1);
+                nextDueDate = addDays(nextDueDate, 1);
             }
-
-            shouldReset = task.completed || isBefore(taskDate, now);
           }
+          // Reset the task for the next occurrence
+          updatedTasks[index] = {
+            ...task,
+            completed: false,
+            dueDate: nextDueDate,
+            missedCount: 0, // Reset missedCount when task resets
+          };
 
-          if (shouldReset && nextDueDate) {
-            // If the next due date is in the past, keep advancing until it's today or in the future
-            while (isBefore(nextDueDate, now)) {
-              const interval = task.recurringInterval || 1;
-
-              switch (task.recurringType) {
-                case 'hourly':
-                  nextDueDate = addHours(nextDueDate, interval);
-                  break;
-                case 'daily':
-                  nextDueDate = addDays(nextDueDate, interval);
-                  break;
-                case 'weekly':
-                  nextDueDate = addWeeks(nextDueDate, interval);
-                  break;
-                case 'monthly':
-                  nextDueDate = addMonths(nextDueDate, interval);
-                  break;
-                case 'yearly':
-                  nextDueDate = addYears(nextDueDate, interval);
-                  break;
-                case 'custom':
-                  // Handle custom intervals based on the unit
-                  switch (task.recurringIntervalUnit) {
-                    case 'minute':
-                      nextDueDate = addMinutes(nextDueDate, interval);
-                      break;
-                    case 'hour':
-                      nextDueDate = addHours(nextDueDate, interval);
-                      break;
-                    case 'day':
-                      nextDueDate = addDays(nextDueDate, interval);
-                      break;
-                    case 'week':
-                      nextDueDate = addWeeks(nextDueDate, interval);
-                      break;
-                    case 'month':
-                      nextDueDate = addMonths(nextDueDate, interval);
-                      break;
-                    case 'year':
-                      nextDueDate = addYears(nextDueDate, interval);
-                      break;
-                    default:
-                      nextDueDate = addDays(nextDueDate, interval);
-                  }
-                  break;
-                default:
-                  nextDueDate = addDays(nextDueDate, 1);
-              }
-            }
-            // Reset the task for the next occurrence
-            updatedTasks[index] = {
-              ...task,
-              completed: false,
-              dueDate: nextDueDate,
-              missedCount: 0,
-            };
-
-            tasksUpdated = true;
-          }
+          tasksUpdated = true;
         }
-      });
-
-      // Check for missed recurring tasks
-      updatedTasks.forEach((task, index) => {
-        if (task.isRecurring && !task.completed && task.dueDate) {
-          const taskDate = new Date(task.dueDate);
-          taskDate.setHours(0, 0, 0, 0);
-
-          const yesterday = new Date(today);
-          yesterday.setDate(yesterday.getDate() - 1);
-          yesterday.setHours(0, 0, 0, 0);
-
-          // If the due date was yesterday and task wasn't completed
-          if (isEqual(taskDate, yesterday)) {
-            // Increment the missed count
-            updatedTasks[index] = {
-              ...task,
-              missedCount: (task.missedCount || 0) + 1,
-            };
-
-            tasksUpdated = true;
-          }
-        }
-      });
-
-      if (tasksUpdated) {
-        setTasks(updatedTasks);
       }
-    };
+    });
 
-    // Check recurring tasks on component mount
+    // Check for missed recurring tasks
+    updatedTasks.forEach((task, index) => {
+      if (task.isRecurring && !task.completed && task.dueDate) {
+        const taskDate = new Date(task.dueDate);
+        taskDate.setHours(0, 0, 0, 0);
+
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+
+        // If the due date was yesterday and task wasn't completed
+        if (isEqual(taskDate, yesterday)) {
+          updatedTasks[index] = {
+            ...task,
+            missedCount: (task.missedCount || 0) + 1,
+          };
+          tasksUpdated = true;
+        }
+      }
+    });
+
+    if (tasksUpdated) {
+      setTasks(updatedTasks);
+    }
+  };
+
+  // Effect for immediate check of recurring tasks when tasks change
+  useEffect(() => {
     checkRecurringTasks();
+  }, [tasks]);
 
-    // Set up daily check at midnight
+  // Effect for daily scheduled checks of recurring tasks (runs once on mount)
+  useEffect(() => {
     const now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
 
     const timeToMidnight = tomorrow.getTime() - now.getTime();
+    let dailyIntervalId: NodeJS.Timeout | undefined;
 
-    const midnightTimeout = setTimeout(() => {
-      checkRecurringTasks();
-
+    const midnightTimeoutId = setTimeout(() => {
+      checkRecurringTasks(); // First check at midnight
       // Then set interval for subsequent days
-      const dailyInterval = setInterval(checkRecurringTasks, 24 * 60 * 60 * 1000);
-      return () => clearInterval(dailyInterval);
+      dailyIntervalId = setInterval(checkRecurringTasks, 24 * 60 * 60 * 1000);
     }, timeToMidnight);
 
-    return () => clearTimeout(midnightTimeout);
-  }, [tasks]);
+    return () => {
+      clearTimeout(midnightTimeoutId);
+      if (dailyIntervalId) {
+        clearInterval(dailyIntervalId);
+      }
+    };
+  }, []); // Empty dependency array ensures this runs only on mount and unmount
 
   // Request notification permission on startup if enabled
   useEffect(() => {
@@ -376,7 +354,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       });
 
       // Play sound when notification shows
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/933/933-preview.mp3');
+      const audio = new Audio('/alarm.mp3'); // Path relative to the public directory
       audio.play().catch(e => console.error("Error playing sound:", e));
 
       // Add click event to focus window when notification is clicked
@@ -412,17 +390,21 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     return { missedTasks, completionRate };
   };
 
-  // Set up a timer to check alarms every minute
+  // For immediate alarm checks when tasks or notification preferences change
   useEffect(() => {
-    // Run once immediately on component mount
-    checkAlarms();
+    if (preferences.enableNotifications) {
+      checkAlarms();
+    }
+  }, [tasks, preferences.enableNotifications]);
 
-    // Then set interval to run every minute
+  // For the 1-minute interval timer for alarms
+  useEffect(() => {
+    if (!preferences.enableNotifications) {
+      return; // No interval if notifications are off
+    }
     const alarmInterval = setInterval(checkAlarms, 60000);
-
-    // Clean up on unmount
     return () => clearInterval(alarmInterval);
-  }, [tasks, preferences.enableNotifications]);  // Re-run when tasks or notification preferences change
+  }, [preferences.enableNotifications]);
 
   // Context methods
   const addTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
